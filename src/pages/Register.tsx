@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SkillSelector from "@/components/SkillSelector";
+import UniversitySelector from "@/components/UniversitySelector";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Users, Star, ArrowLeft, TrendingUp } from "lucide-react";
 const Register = () => {
@@ -31,7 +31,7 @@ const Register = () => {
     agreeToNewsletter: false,
     profileVisibleToPartners: false
   });
-  const [skills, setSkills] = useState<string[]>([]);
+  
   const {
     toast
   } = useToast();
@@ -77,7 +77,6 @@ const Register = () => {
     // Here you would typically send the data to your backend
     console.log("Registration data:", {
       ...formData,
-      skills,
       membershipType: selectedMembership
     });
     toast({
@@ -224,7 +223,7 @@ const Register = () => {
         </Button>
         
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Application Forum</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Education Background</h1>
           <p className="mt-2 text-gray-600">
             You selected: <span className="font-semibold text-primary">
               {selectedMembership === 'free' ? 'Free Member' : selectedMembership === 'supporter' ? 'Community Supporter' : 'Annual Premium'}
@@ -270,10 +269,16 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Professional Information */}
+            {/* Education Information */}
             <div>
-              <Label htmlFor="usEducation">U.S. Education Background</Label>
-              <Input id="usEducation" name="usEducation" type="text" placeholder="e.g., MBA Harvard Business School, BS Computer Science MIT" value={formData.usEducation} onChange={handleInputChange} />
+              <Label htmlFor="usEducation">University *</Label>
+              <div className="mt-2">
+                <UniversitySelector
+                  value={formData.usEducation}
+                  onChange={(value) => setFormData(prev => ({ ...prev, usEducation: value }))}
+                  placeholder="Select your university..."
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -287,58 +292,6 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Skills Section */}
-            <div>
-              <Label>Skills & Expertise</Label>
-              <div className="mt-2">
-                <SkillSelector skills={skills} onSkillsChange={setSkills} placeholder="Add your skills and areas of expertise..." />
-              </div>
-            </div>
-
-            {/* Business Interests Section */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900">Business Interests & Goals</h3>
-              
-              <div>
-                <Label htmlFor="businessInterest">Business Interest</Label>
-                <RadioGroup value={formData.businessInterest} onValueChange={value => setFormData(prev => ({
-                ...prev,
-                businessInterest: value
-              }))} className="mt-3">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="expand-existing" id="expand-existing" />
-                    <Label htmlFor="expand-existing">I have a company and want to expand</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="start-company" id="start-company" />
-                    <Label htmlFor="start-company">I'm looking to start a company</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="join-company" id="join-company" />
-                    <Label htmlFor="join-company">I'm looking to join an existing company</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="other" id="other" />
-                    <Label htmlFor="other">Other business interests</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="mt-4">
-                <Label htmlFor="companyExpansionNeeds">
-                  {formData.businessInterest === "expand-existing" && "What do you need to expand your company?"}
-                  {formData.businessInterest === "start-company" && "What do you need to start your company?"}
-                  {formData.businessInterest === "join-company" && "What type of company are you looking to join?"}
-                  {(formData.businessInterest === "other" || !formData.businessInterest) && "Please describe your business interests and needs"}
-                </Label>
-                <Textarea id="companyExpansionNeeds" name="companyExpansionNeeds" rows={4} placeholder={formData.businessInterest === "expand-existing" ? "e.g., funding, partnerships, talent acquisition, market entry, technology solutions..." : formData.businessInterest === "start-company" ? "e.g., co-founders, funding, mentorship, business plan development, market research..." : formData.businessInterest === "join-company" ? "e.g., tech startup, consulting firm, fintech company, specific role preferences..." : "Tell us about your business goals, what you're looking for, or how you'd like to contribute..."} value={formData.companyExpansionNeeds} onChange={handleInputChange} />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="bio">Brief Bio</Label>
-              <Textarea id="bio" name="bio" rows={4} placeholder="Tell us about yourself, your interests, and what you hope to gain from the ABTC Bulgaria community..." value={formData.bio} onChange={handleInputChange} />
-            </div>
 
 
             {/* Terms and Conditions */}
