@@ -1,62 +1,145 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UniversitySelector from "@/components/UniversitySelector";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Users, Star, ArrowLeft, TrendingUp } from "lucide-react";
+import { CheckCircle, Users, Star, ArrowLeft, TrendingUp, Upload, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
 const Register = () => {
   const [currentStep, setCurrentStep] = useState<'membership' | 'registration'>('membership');
   const [selectedMembership, setSelectedMembership] = useState<'free' | 'supporter' | 'annual' | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    usEducation: "",
-    currentRole: "",
+    university: "",
+    jobTitle: "",
     company: "",
-    bio: "",
-    businessInterest: "",
-    companyExpansionNeeds: "",
+    country: "",
+    city: "",
+    areasOfInterest: [] as string[],
+    reasonForJoining: "",
+    willingToMentor: "",
+    linkedinProfile: "",
+    referralMember: "",
     agreeToTerms: false,
     agreeToNewsletter: false,
-    profileVisibleToPartners: false
   });
   
-  const {
-    toast
-  } = useToast();
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const {
-      name,
-      value
-    } = e.target;
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const areasOfInterestOptions = [
+    "Startups",
+    "Tech",
+    "Business",
+    "Education", 
+    "Investment",
+    "Culture",
+    "Returning to Bulgaria",
+    "Innovation",
+    "Entrepreneurship",
+    "Digital Transformation"
+  ];
+
+  const reasonForJoiningOptions = [
+    "Networking",
+    "Business Opportunities", 
+    "Knowledge Sharing",
+    "Social Events",
+    "Mentorship",
+    "Other"
+  ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
   };
+
+  const handleSelectChange = (name: string) => (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleCheckboxChange = (name: string) => (checked: boolean | string) => {
     setFormData(prev => ({
       ...prev,
       [name]: checked
     }));
   };
+
+  const handleAreasOfInterestChange = (area: string) => {
+    setFormData(prev => ({
+      ...prev,
+      areasOfInterest: prev.areasOfInterest.includes(area)
+        ? prev.areasOfInterest.filter(item => item !== area)
+        : [...prev.areasOfInterest, area]
+    }));
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfilePhoto(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const removePhoto = () => {
+    setProfilePhoto(null);
+    setPreviewUrl("");
+  };
+
+  const uploadProfilePhoto = async (userId: string) => {
+    if (!profilePhoto) return null;
+
+    const fileExt = profilePhoto.name.split('.').pop();
+    const fileName = `${userId}/profile.${fileExt}`;
+
+    const { error, data } = await supabase.storage
+      .from('profile-photos')
+      .upload(fileName, profilePhoto, {
+        upsert: true
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('profile-photos')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   const handleMembershipSelect = (type: 'free' | 'supporter' | 'annual') => {
     setSelectedMembership(type);
     setCurrentStep('registration');
   };
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
@@ -65,26 +148,110 @@ const Register = () => {
       });
       return;
     }
+
     if (!formData.agreeToTerms) {
       toast({
-        title: "Error",
+        title: "Error", 
         description: "Please agree to the terms and conditions",
         variant: "destructive"
       });
       return;
     }
 
-    // Here you would typically send the data to your backend
-    console.log("Registration data:", {
-      ...formData,
-      membershipType: selectedMembership
-    });
-    toast({
-      title: "Registration Successful!",
-      description: "Welcome to ABTC Bulgaria. You will receive a confirmation email shortly."
-    });
+    if (formData.areasOfInterest.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one area of interest",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.reasonForJoining) {
+      toast({
+        title: "Error",
+        description: "Please select your reason for joining",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('User creation failed');
+      }
+
+      // Upload profile photo if provided
+      let profilePhotoUrl = null;
+      if (profilePhoto) {
+        profilePhotoUrl = await uploadProfilePhoto(authData.user.id);
+      }
+
+      // Create profile record
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: authData.user.id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          university: formData.university,
+          job_title: formData.jobTitle,
+          company: formData.company,
+          country: formData.country,
+          city: formData.city,
+          areas_of_interest: formData.areasOfInterest,
+          reason_for_joining: formData.reasonForJoining,
+          willing_to_mentor: formData.willingToMentor,
+          linkedin_profile: formData.linkedinProfile,
+          referral_member: formData.referralMember,
+          profile_photo_url: profilePhotoUrl,
+          membership_type: selectedMembership || 'free',
+          agree_to_terms: formData.agreeToTerms,
+          agree_to_newsletter: formData.agreeToNewsletter
+        });
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "Registration Successful!",
+        description: "Welcome to ABTC Bulgaria. Please check your email to verify your account."
+      });
+
+      // Redirect to home or dashboard
+      navigate('/');
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast({
+        title: "Registration Failed",
+        description: error.message || "An error occurred during registration. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  const renderMembershipSelection = () => <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+  const renderMembershipSelection = () => (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Choose Your Membership</h1>
         <p className="mt-2 text-gray-600">
@@ -214,8 +381,11 @@ const Register = () => {
           </CardContent>
         </Card>
       </div>
-    </div>;
-  const renderRegistrationForm = () => <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+    </div>
+  );
+
+  const renderRegistrationForm = () => (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="mb-6">
         <Button variant="ghost" onClick={() => setCurrentStep('membership')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -223,7 +393,7 @@ const Register = () => {
         </Button>
         
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Education Background</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Complete Your Registration</h1>
           <p className="mt-2 text-gray-600">
             You selected: <span className="font-semibold text-primary">
               {selectedMembership === 'free' ? 'Free Member' : selectedMembership === 'supporter' ? 'Community Supporter' : 'Annual Premium'}
@@ -234,7 +404,7 @@ const Register = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Complete Your Registration</CardTitle>
+          <CardTitle>Registration Details</CardTitle>
           <CardDescription>
             To protect our members and maintain our exceptional community standards, we carefully review each application to guarantee an outstanding experience for everyone joining our exclusive network.
           </CardDescription>
@@ -242,62 +412,277 @@ const Register = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name *</Label>
-                <Input id="firstName" name="firstName" type="text" required value={formData.firstName} onChange={handleInputChange} />
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Personal Information</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First Name *</Label>
+                  <Input 
+                    id="firstName" 
+                    name="firstName" 
+                    type="text" 
+                    required 
+                    value={formData.firstName} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Input 
+                    id="lastName" 
+                    name="lastName" 
+                    type="text" 
+                    required 
+                    value={formData.lastName} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
               </div>
+
               <div>
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input id="lastName" name="lastName" type="text" required value={formData.lastName} onChange={handleInputChange} />
+                <Label htmlFor="email">Email Address *</Label>
+                <Input 
+                  id="email" 
+                  name="email" 
+                  type="email" 
+                  required 
+                  value={formData.email} 
+                  onChange={handleInputChange} 
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="password">Password *</Label>
+                  <Input 
+                    id="password" 
+                    name="password" 
+                    type="password" 
+                    required 
+                    value={formData.password} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    type="password" 
+                    required 
+                    value={formData.confirmPassword} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="email">Email Address *</Label>
-              <Input id="email" name="email" type="email" required value={formData.email} onChange={handleInputChange} />
+            {/* Profile Photo */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Profile Photo</h3>
+              <div className="flex items-center space-x-4">
+                {previewUrl ? (
+                  <div className="relative">
+                    <img 
+                      src={previewUrl} 
+                      alt="Profile preview" 
+                      className="w-20 h-20 rounded-full object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2 rounded-full w-6 h-6 p-0"
+                      onClick={removePhoto}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <Label htmlFor="photo" className="cursor-pointer">
+                    <Button type="button" variant="outline" asChild>
+                      <span>Upload Photo</span>
+                    </Button>
+                  </Label>
+                  <Input
+                    id="photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Optional - JPG, PNG up to 5MB</p>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Education & Professional */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Education & Professional</h3>
+              
               <div>
-                <Label htmlFor="password">Password *</Label>
-                <Input id="password" name="password" type="password" required value={formData.password} onChange={handleInputChange} />
+                <Label htmlFor="university">University *</Label>
+                <div className="mt-2">
+                  <UniversitySelector
+                    value={formData.university}
+                    onChange={(value) => setFormData(prev => ({ ...prev, university: value }))}
+                    placeholder="Select your university..."
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                <Input id="confirmPassword" name="confirmPassword" type="password" required value={formData.confirmPassword} onChange={handleInputChange} />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="jobTitle">Current Role</Label>
+                  <Input 
+                    id="jobTitle" 
+                    name="jobTitle" 
+                    type="text" 
+                    placeholder="e.g., Software Engineer" 
+                    value={formData.jobTitle} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="company">Company/Organization</Label>
+                  <Input 
+                    id="company" 
+                    name="company" 
+                    type="text" 
+                    placeholder="e.g., Tech Company Inc." 
+                    value={formData.company} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Education Information */}
-            <div>
-              <Label htmlFor="usEducation">University *</Label>
-              <div className="mt-2">
-                <UniversitySelector
-                  value={formData.usEducation}
-                  onChange={(value) => setFormData(prev => ({ ...prev, usEducation: value }))}
-                  placeholder="Select your university..."
+            {/* Location */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Location</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="country">Country *</Label>
+                  <Input 
+                    id="country" 
+                    name="country" 
+                    type="text" 
+                    required
+                    placeholder="e.g., Bulgaria" 
+                    value={formData.country} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city">City *</Label>
+                  <Input 
+                    id="city" 
+                    name="city" 
+                    type="text" 
+                    required
+                    placeholder="e.g., Sofia" 
+                    value={formData.city} 
+                    onChange={handleInputChange} 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Areas of Interest */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Areas of Interest *</h3>
+              <p className="text-sm text-gray-600">Select all that apply</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {areasOfInterestOptions.map((area) => (
+                  <div key={area} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`interest-${area}`}
+                      checked={formData.areasOfInterest.includes(area)}
+                      onCheckedChange={() => handleAreasOfInterestChange(area)}
+                    />
+                    <Label htmlFor={`interest-${area}`} className="text-sm">
+                      {area}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Reason for Joining */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Reason for Joining *</h3>
+              <Select value={formData.reasonForJoining} onValueChange={handleSelectChange("reasonForJoining")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your primary reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reasonForJoiningOptions.map((reason) => (
+                    <SelectItem key={reason} value={reason}>
+                      {reason}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Additional Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Additional Information</h3>
+              
+              <div>
+                <Label htmlFor="willingToMentor">Willing to Mentor / Be Mentored</Label>
+                <Select value={formData.willingToMentor} onValueChange={handleSelectChange("willingToMentor")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="maybe">Maybe</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="linkedinProfile">LinkedIn Profile</Label>
+                <Input 
+                  id="linkedinProfile" 
+                  name="linkedinProfile" 
+                  type="url" 
+                  placeholder="https://linkedin.com/in/yourprofile" 
+                  value={formData.linkedinProfile} 
+                  onChange={handleInputChange} 
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="referralMember">Referral (Were you referred by a current member?)</Label>
+                <Input 
+                  id="referralMember" 
+                  name="referralMember" 
+                  type="text" 
+                  placeholder="Name of the member who referred you" 
+                  value={formData.referralMember} 
+                  onChange={handleInputChange} 
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="currentRole">Current Role</Label>
-                <Input id="currentRole" name="currentRole" type="text" placeholder="e.g., Software Engineer" value={formData.currentRole} onChange={handleInputChange} />
-              </div>
-              <div>
-                <Label htmlFor="company">Company/Organization</Label>
-                <Input id="company" name="company" type="text" placeholder="e.g., Tech Company Inc." value={formData.company} onChange={handleInputChange} />
-              </div>
-            </div>
-
-
-
             {/* Terms and Conditions */}
             <div className="space-y-4 border-t pt-6">
               <div className="flex items-start space-x-3">
-                <Checkbox id="terms" checked={formData.agreeToTerms} onCheckedChange={handleCheckboxChange("agreeToTerms")} />
+                <Checkbox 
+                  id="terms" 
+                  checked={formData.agreeToTerms} 
+                  onCheckedChange={handleCheckboxChange("agreeToTerms")} 
+                />
                 <div className="grid gap-1.5 leading-none">
                   <Label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     I agree to the Terms and Conditions *
@@ -309,7 +694,11 @@ const Register = () => {
               </div>
 
               <div className="flex items-start space-x-3">
-                <Checkbox id="newsletter" checked={formData.agreeToNewsletter} onCheckedChange={handleCheckboxChange("agreeToNewsletter")} />
+                <Checkbox 
+                  id="newsletter" 
+                  checked={formData.agreeToNewsletter} 
+                  onCheckedChange={handleCheckboxChange("agreeToNewsletter")} 
+                />
                 <div className="grid gap-1.5 leading-none">
                   <Label htmlFor="newsletter" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Subscribe to newsletter and updates
@@ -321,8 +710,8 @@ const Register = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full">
-              Submit Application
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Creating Account..." : "Submit Application"}
             </Button>
           </form>
 
@@ -336,8 +725,11 @@ const Register = () => {
           </div>
         </CardContent>
       </Card>
-    </div>;
-  return <div className="flex flex-col min-h-screen">
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col min-h-screen">
       <Header />
       
       <div className="flex-1 bg-gray-50 py-12">
@@ -345,6 +737,8 @@ const Register = () => {
       </div>
       
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default Register;
