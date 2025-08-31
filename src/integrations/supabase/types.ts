@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          agree_to_newsletter: boolean
+          agree_to_terms: boolean
+          areas_of_interest: string[]
+          city: string
+          company: string | null
+          country: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          job_title: string | null
+          last_name: string
+          linkedin_profile: string | null
+          membership_type: string
+          profile_photo_url: string | null
+          reason_for_joining: string
+          referral_member: string | null
+          university: string
+          updated_at: string
+          user_id: string
+          willing_to_mentor: string | null
+        }
+        Insert: {
+          agree_to_newsletter?: boolean
+          agree_to_terms?: boolean
+          areas_of_interest: string[]
+          city: string
+          company?: string | null
+          country: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          job_title?: string | null
+          last_name: string
+          linkedin_profile?: string | null
+          membership_type: string
+          profile_photo_url?: string | null
+          reason_for_joining: string
+          referral_member?: string | null
+          university: string
+          updated_at?: string
+          user_id: string
+          willing_to_mentor?: string | null
+        }
+        Update: {
+          agree_to_newsletter?: boolean
+          agree_to_terms?: boolean
+          areas_of_interest?: string[]
+          city?: string
+          company?: string | null
+          country?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          job_title?: string | null
+          last_name?: string
+          linkedin_profile?: string | null
+          membership_type?: string
+          profile_photo_url?: string | null
+          reason_for_joining?: string
+          referral_member?: string | null
+          university?: string
+          updated_at?: string
+          user_id?: string
+          willing_to_mentor?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
