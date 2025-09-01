@@ -69,9 +69,9 @@ const ProfileTab = ({ userProfile, userSkills, setUserSkills }: ProfileTabProps)
           <label className="text-sm font-medium mb-2 block">Profile Picture</label>
           <div className="flex items-center space-x-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={profilePicture} alt={userProfile.name} />
+              <AvatarImage src={profilePicture} alt={userProfile?.name || 'Member'} />
               <AvatarFallback className="text-lg">
-                {userProfile.name.split(' ').map(n => n[0]).join('')}
+                {(userProfile?.name || 'M').split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
             <div>

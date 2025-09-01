@@ -72,8 +72,8 @@ const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab }: AppMemberSid
         <div className="flex items-center gap-2 px-2 py-1">
           <UserIcon className="h-5 w-5" />
           <div className="min-w-0">
-            <div className="text-sm font-medium truncate">{userProfile.name}</div>
-            <div className="text-[11px] text-muted-foreground truncate">Member since {userProfile.joinDate}</div>
+            <div className="text-sm font-medium truncate">{userProfile?.name || 'Member'}</div>
+            <div className="text-[11px] text-muted-foreground truncate">Member since {userProfile?.joinDate || 'Recently'}</div>
           </div>
         </div>
       </SidebarHeader>

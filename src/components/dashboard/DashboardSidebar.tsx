@@ -29,7 +29,7 @@ const DashboardSidebar = ({ userProfile, activeTab, setActiveTab, unreadMessageC
                 className="p-0 h-auto font-semibold text-lg justify-start text-gray-800 hover:text-blue-700"
                 onClick={() => setActiveTab("profile")}
               >
-                {userProfile.name}
+                {userProfile?.name || 'Member'}
               </Button>
             </div>
           </CardTitle>

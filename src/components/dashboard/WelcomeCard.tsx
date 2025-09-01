@@ -24,7 +24,7 @@ const WelcomeCard = ({ userProfile }: WelcomeCardProps) => {
     <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
       <CardHeader>
         <CardTitle className="text-xl">
-          {getGreeting()}, {userProfile.name}! 👋
+          {getGreeting()}, {userProfile?.name || 'Member'}! 👋
         </CardTitle>
         <CardDescription>
           Welcome to your ABTC Bulgaria community dashboard

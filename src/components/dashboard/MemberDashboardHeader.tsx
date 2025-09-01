@@ -36,7 +36,7 @@ const MemberDashboardHeader = ({ userProfile, onLogout }: MemberDashboardHeaderP
           
           <div className="flex items-center space-x-2 md:space-x-4">
             <span className="text-sm text-gray-600 hidden sm:inline truncate max-w-32 md:max-w-none">
-              Welcome, {userProfile.name}
+              Welcome, {userProfile?.name || 'Member'}
             </span>
             <Badge variant="outline" className="mr-2 hidden sm:inline-flex border-blue-200 text-blue-700 bg-blue-50 text-xs">
               {userProfile.role}
