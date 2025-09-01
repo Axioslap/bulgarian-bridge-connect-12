@@ -46,12 +46,12 @@ const WelcomeCard = ({ userProfile }: WelcomeCardProps) => {
         <div>
           <h3 className="font-medium text-sm mb-2 text-gray-700">Your Expertise</h3>
           <div className="flex flex-wrap gap-1">
-            {userProfile.skills.slice(0, 3).map((skill, index) => (
+            {(userProfile?.skills || []).slice(0, 3).map((skill, index) => (
               <SkillTag key={index} skill={skill} variant="outline" />
             ))}
-            {userProfile.skills.length > 3 && (
+            {(userProfile?.skills?.length || 0) > 3 && (
               <Badge variant="outline" className="text-xs">
-                +{userProfile.skills.length - 3} more
+                +{(userProfile?.skills?.length || 0) - 3} more
               </Badge>
             )}
           </div>

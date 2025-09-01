@@ -35,13 +35,13 @@ const DashboardTab = ({ userProfile, onTabChange }: DashboardTabProps) => {
   };
 
   // Derived discussion slices
-  const userSkills = (userProfile.skills || []).map((s) => s.toLowerCase());
+  const userSkills = (userProfile?.skills || []).map((s) => s.toLowerCase());
   const yourPosts = mockDiscussionPosts
-    .filter((p) => p.author === userProfile.name)
+    .filter((p) => p.author === (userProfile?.name || ''))
     .slice(0, 3);
   const recommendedPosts = mockDiscussionPosts
     .filter(
-      (p) => p.author !== userProfile.name && p.tags?.some((tag) => userSkills.includes(tag.toLowerCase()))
+      (p) => p.author !== (userProfile?.name || '') && p.tags?.some((tag) => userSkills.includes(tag.toLowerCase()))
     )
     .slice(0, 3);
 
