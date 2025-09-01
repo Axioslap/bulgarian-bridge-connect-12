@@ -388,7 +388,7 @@ const MessagesTab = () => {
     ? messages 
     : messages.filter(msg => {
         const group = groups.find(g => g.id === activeGroup);
-        return group?.messageIds.includes(msg.id) || false;
+        return group?.messageIds?.includes(msg.id) || false;
       });
 
   return (
