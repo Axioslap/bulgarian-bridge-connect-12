@@ -68,7 +68,8 @@ export const useMemberAuth = () => {
             job_title: profile.job_title || '',
             company: profile.company || '',
             city: profile.city || '',
-            country: profile.country || ''
+            country: profile.country || '',
+            profile_photo_url: profile.profile_photo_url || ''
           });
         }
       } catch (error) {

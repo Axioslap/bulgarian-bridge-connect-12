@@ -85,7 +85,8 @@ const MemberDashboard = () => {
       <div className="min-h-screen flex flex-col w-full">
         <MemberDashboardHeader 
           userProfile={displayProfile} 
-          onLogout={handleLogout} 
+          onLogout={handleLogout}
+          onProfileEdit={() => setActiveTab('profile')}
         />
 
         <div className="flex flex-1 w-full">

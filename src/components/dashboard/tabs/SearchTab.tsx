@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User } from "lucide-react";
 import SkillTag from "@/components/SkillTag";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
@@ -216,11 +218,19 @@ const SearchTab = () => {
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <h4 className="font-medium text-sm sm:text-base truncate">
-                            {member.first_name} {member.last_name}
-                          </h4>
-                          <Badge variant="outline" className="text-xs">Member</Badge>
+                        <div className="flex items-center gap-3 mb-2">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={member.profile_photo_url || "/placeholder.svg"} />
+                            <AvatarFallback>
+                              <User className="h-5 w-5" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-medium text-sm sm:text-base truncate">
+                              {member.first_name} {member.last_name}
+                            </h4>
+                            <Badge variant="outline" className="text-xs">Member</Badge>
+                          </div>
                         </div>
                         <p className="text-xs sm:text-sm text-gray-600 mb-1">📍 {member.city}, {member.country}</p>
                         <p className="text-xs sm:text-sm text-gray-600 mb-1">🎓 {member.university}</p>
