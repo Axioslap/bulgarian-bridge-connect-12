@@ -35,7 +35,7 @@ const WelcomeCard = ({ userProfile }: WelcomeCardProps) => {
           <div>
             <h3 className="font-medium text-sm mb-1 text-gray-700">Member Status</h3>
             <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-              {userProfile.role}
+              {userProfile?.role || 'Member'}
             </Badge>
           </div>
           <div>

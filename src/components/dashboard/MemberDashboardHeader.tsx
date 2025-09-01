@@ -39,7 +39,7 @@ const MemberDashboardHeader = ({ userProfile, onLogout }: MemberDashboardHeaderP
               Welcome, {userProfile?.name || 'Member'}
             </span>
             <Badge variant="outline" className="mr-2 hidden sm:inline-flex border-blue-200 text-blue-700 bg-blue-50 text-xs">
-              {userProfile.role}
+              {userProfile?.role || 'Member'}
             </Badge>
             <Button 
               variant="ghost" 
