@@ -1,303 +1,434 @@
-import { useMemo, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
-  DialogDescription,
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
-import { mockMessages, mockMembers } from "@/data/mockData";
-import { ArrowLeft, MoreHorizontal, Plus, Users, FolderDot } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { 
+  MessageCircle, 
+  Users, 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Send, 
+  Reply, 
+  Forward 
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
+import { useToast } from "@/hooks/use-toast";
 
+// Interface for messages
 interface Message {
-  id: number;
-  sender: string;
+  id: string;
+  sender_id: string;
+  recipient_id: string;
   subject: string;
-  preview: string;
-  fullContent: string;
-  time: string;
-  unread: boolean;
+  content: string;
+  created_at: string;
+  is_read: boolean;
+  sender_profile?: {
+    first_name: string;
+    last_name: string;
+  };
 }
 
 interface Group {
   id: string;
   name: string;
-  members: string[]; // member names
-  createdAt: number;
+  members: string[];
 }
 
-const defaultGroups: Group[] = [
-  { id: "all", name: "All", members: [], createdAt: Date.now() - 100000 },
-  { id: "partnerships", name: "Partnerships", members: ["Alex Petrov"], createdAt: Date.now() - 90000 },
-  { id: "events", name: "Events", members: ["ABTC Bulgaria"], createdAt: Date.now() - 80000 },
-  { id: "mentorship", name: "Mentorship", members: ["Maria Dimitrova"], createdAt: Date.now() - 70000 },
-];
-
 const MessagesTab = () => {
-  const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [groups, setGroups] = useState<Group[]>([
+    { id: "all", name: "All Messages", members: [] },
+  ]);
 
-  // Groups state (persist lightly in localStorage)
-  const persisted = typeof window !== "undefined" ? localStorage.getItem("message_groups") : null;
-  const initialGroups = useMemo<Group[]>(() => {
-    try {
-      return persisted ? (JSON.parse(persisted) as Group[]) : defaultGroups;
-    } catch {
-      return defaultGroups;
+  const [activeGroup, setActiveGroup] = useState("all");
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [renamingGroup, setRenamingGroup] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  
+  const { user } = useMemberAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchMessages();
     }
-  }, [persisted]);
+  }, [user]);
 
-  const [groups, setGroups] = useState<Group[]>(initialGroups);
-  const [activeGroupId, setActiveGroupId] = useState<string>(groups[0]?.id || "all");
+  const fetchMessages = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
 
-  // Create / edit group dialog state
-  const [openCreate, setOpenCreate] = useState(false);
-  const [groupName, setGroupName] = useState("");
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-
-  const activeGroup = groups.find((g) => g.id === activeGroupId) || groups[0];
-
-  const filteredMessages = useMemo(() => {
-    if (!activeGroup || activeGroup.id === "all") return messages;
-    const nameMatch = activeGroup.name.toLowerCase();
-    return messages.filter(
-      (m) =>
-        activeGroup.members.includes(m.sender) ||
-        m.subject.toLowerCase().includes(nameMatch)
-    );
-  }, [messages, activeGroup]);
-
-  const selectedMessage = messages.find((m) => m.id === selectedMessageId) || null;
-
-  const handleMessageClick = (messageId: number) => {
-    setSelectedMessageId(messageId);
-    setMessages((prev) =>
-      prev.map((m) => (m.id === messageId ? { ...m, unread: false } : m))
-    );
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleBack = () => setSelectedMessageId(null);
+  useEffect(() => {
+    // Load groups from localStorage
+    const savedGroups = localStorage.getItem('messageGroups');
+    if (savedGroups) {
+      setGroups(JSON.parse(savedGroups));
+    }
+  }, []);
 
-  const saveGroups = (next: Group[]) => {
-    setGroups(next);
-    try {
-      localStorage.setItem("message_groups", JSON.stringify(next));
-    } catch {}
+  useEffect(() => {
+    // Save groups to localStorage
+    localStorage.setItem('messageGroups', JSON.stringify(groups));
+  }, [groups]);
+
+  const handleMessageClick = async (messageId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      // Mark as read if user is recipient
+      if (message.recipient_id === user?.id && !message.is_read) {
+        try {
+          const { error } = await supabase
+            .from('messages')
+            .update({ is_read: true })
+            .eq('id', messageId);
+
+          if (error) throw error;
+          
+          setMessages(prev => prev.map(m => 
+            m.id === messageId ? { ...m, is_read: true } : m
+          ));
+        } catch (error) {
+          console.error('Error marking message as read:', error);
+        }
+      }
+      setSelectedMessage(message);
+    }
   };
 
   const handleCreateGroup = () => {
-    if (!groupName.trim()) return;
+    if (!newGroupName.trim()) return;
+    
     const newGroup: Group = {
-      id: `${groupName.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
-      name: groupName.trim(),
-      members: selectedMembers,
-      createdAt: Date.now(),
+      id: Date.now().toString(),
+      name: newGroupName,
+      members: []
     };
-    const next = [...groups, newGroup];
-    saveGroups(next);
-    setGroupName("");
-    setSelectedMembers([]);
-    setOpenCreate(false);
-    setActiveGroupId(newGroup.id);
+    
+    setGroups([...groups, newGroup]);
+    setNewGroupName("");
+    setIsCreateGroupOpen(false);
+    
+    toast({
+      title: "Group created",
+      description: `"${newGroup.name}" group has been created.`,
+    });
   };
 
   const handleRenameGroup = (groupId: string) => {
-    const nextName = prompt("Rename group to:");
-    if (!nextName) return;
-    const next = groups.map((g) => (g.id === groupId ? { ...g, name: nextName } : g));
-    saveGroups(next);
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+    
+    setRenamingGroup(groupId);
+    setNewName(group.name);
+  };
+
+  const confirmRename = () => {
+    if (!newName.trim() || !renamingGroup) return;
+    
+    setGroups(groups.map(g => 
+      g.id === renamingGroup ? { ...g, name: newName } : g
+    ));
+    
+    setRenamingGroup(null);
+    setNewName("");
+    
+    toast({
+      title: "Group renamed",
+      description: "Group has been successfully renamed.",
+    });
   };
 
   const handleDeleteGroup = (groupId: string) => {
-    if (!confirm("Delete this group?")) return;
-    const next = groups.filter((g) => g.id !== groupId);
-    saveGroups(next);
-    if (activeGroupId === groupId) setActiveGroupId("all");
+    setGroups(groups.filter(g => g.id !== groupId));
+    
+    if (activeGroup === groupId) {
+      setActiveGroup("all");
+    }
+    
+    toast({
+      title: "Group deleted",
+      description: "Group has been successfully deleted.",
+    });
   };
 
-  const toggleMemberSelection = (name: string) => {
-    setSelectedMembers((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-    );
-  };
+  // Filter messages based on active group
+  const filteredMessages = activeGroup === "all" 
+    ? messages 
+    : messages; // For now, show all messages regardless of group
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Messages</CardTitle>
-          <CardDescription>Organize conversations by groups for fast navigation</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5" />
+            Messages
+          </CardTitle>
+          <CardDescription>
+            Connect and communicate with other ABTC Bulgaria members
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Left: Groups */}
-            <aside className="lg:col-span-3 border rounded-lg">
-              <div className="flex items-center justify-between p-3">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Users className="h-4 w-4" /> Message Groups
-                </div>
-                <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Sidebar for Groups */}
+            <div className="lg:w-1/4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Groups
+                </h3>
+                <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" variant="outline">
-                      <Plus className="h-4 w-4 mr-1" /> New
+                      <Plus className="w-4 h-4" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg">
+                  <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Create a group</DialogTitle>
-                      <DialogDescription>Add a name and select members to include.</DialogDescription>
+                      <DialogTitle>Create Message Group</DialogTitle>
+                      <DialogDescription>
+                        Create a new group to organize your messages
+                      </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="group-name">Group name</Label>
-                        <Input id="group-name" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Project Alpha" />
+                      <div>
+                        <Label htmlFor="groupName">Group Name</Label>
+                        <Input
+                          id="groupName"
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value)}
+                          placeholder="Enter group name..."
+                        />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Select members</Label>
-                        <ScrollArea className="h-56 rounded-md border p-3">
-                          <div className="grid grid-cols-1 gap-2">
-                            {mockMembers.map((m) => (
-                              <label key={m.id} className="flex items-center gap-2 text-sm">
-                                <Checkbox
-                                  checked={selectedMembers.includes(m.name)}
-                                  onCheckedChange={() => toggleMemberSelection(m.name)}
-                                />
-                                <span>{m.name}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </ScrollArea>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsCreateGroupOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleCreateGroup}>
+                          Create Group
+                        </Button>
                       </div>
                     </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setOpenCreate(false)}>Cancel</Button>
-                      <Button onClick={handleCreateGroup}>Create</Button>
-                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
-              <Separator />
-              <ScrollArea className="h-[420px]">
-                <div className="p-2 space-y-1">
-                  {groups.map((g) => {
-                    const isActive = activeGroupId === g.id;
-                    const unread = mockMessages.filter((m) =>
-                      g.id === "all" ? m.unread : g.members.includes(m.sender) && m.unread
-                    ).length;
-                    return (
-                      <div key={g.id} className={`group flex items-center justify-between rounded-md px-2 py-2 cursor-pointer ${isActive ? "bg-muted" : "hover:bg-muted/50"}`} onClick={() => setActiveGroupId(g.id)}>
-                        <div className="flex items-center gap-2">
-                          <FolderDot className="h-4 w-4" />
-                          <span className="text-sm font-medium">{g.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {unread > 0 && <Badge variant="secondary" className="h-5 px-1 text-[10px]">{unread}</Badge>}
-                          {g.id !== "all" && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-7 w-7">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="z-50">
-                                <DropdownMenuLabel>Group actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleRenameGroup(g.id); }}>Rename</DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteGroup(g.id); }}>Delete</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
+              
+              <div className="space-y-2">
+                {groups.map(group => (
+                  <div key={group.id} className="flex items-center justify-between">
+                    <Button
+                      variant={activeGroup === group.id ? "default" : "outline"}
+                      className="flex-1 justify-start"
+                      onClick={() => setActiveGroup(group.id)}
+                    >
+                      {group.name}
+                    </Button>
+                    {group.id !== "all" && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRenameGroup(group.id)}
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="ghost">
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Group</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this group? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteGroup(group.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </aside>
-
-            {/* Middle: Conversations */}
-            <section className="lg:col-span-5 border rounded-lg">
-              <div className="flex items-center justify-between p-3">
-                <div className="text-sm font-medium">{activeGroup?.name} Conversations</div>
-                <Button variant="outline" size="sm">Compose</Button>
+                    )}
+                  </div>
+                ))}
               </div>
-              <Separator />
-              <ScrollArea className="h-[420px]">
-                <div className="p-2 space-y-3">
-                  {filteredMessages.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-3">No conversations in this group yet.</p>
-                  ) : (
+              
+              {renamingGroup && (
+                <div className="space-y-2">
+                  <Input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="New group name..."
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={confirmRename}>
+                      Save
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => {
+                        setRenamingGroup(null);
+                        setNewName("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Messages List */}
+            <div className="lg:w-1/2 space-y-4">
+              <h3 className="text-lg font-semibold">Conversations</h3>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading messages...</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredMessages.length > 0 ? (
                     filteredMessages.map((message) => (
                       <div
                         key={message.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${message.unread ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"}`}
                         onClick={() => handleMessageClick(message.id)}
+                        className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                          selectedMessage?.id === message.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                        }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className={`text-sm ${message.unread ? "font-semibold" : "font-medium"}`}>{message.sender}</h4>
-                              {message.unread && <Badge variant="secondary" className="text-[10px]">New</Badge>}
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`font-medium ${
+                                message.recipient_id === user?.id && !message.is_read ? 'text-blue-600' : 'text-gray-900'
+                              }`}>
+                                {message.sender_profile 
+                                  ? `${message.sender_profile.first_name} ${message.sender_profile.last_name}`
+                                  : 'Unknown User'
+                                }
+                              </span>
+                              {message.recipient_id === user?.id && !message.is_read && (
+                                <Badge variant="default" className="text-xs">New</Badge>
+                              )}
                             </div>
-                            <p className="text-sm line-clamp-1">{message.subject}</p>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{message.preview}</p>
+                            <p className={`font-medium text-sm mb-1 ${
+                              message.recipient_id === user?.id && !message.is_read ? 'text-gray-900' : 'text-gray-700'
+                            }`}>
+                              {message.subject}
+                            </p>
+                            <p className="text-sm text-gray-600 truncate">
+                              {message.content}
+                            </p>
                           </div>
-                          <span className="text-xs text-muted-foreground flex-shrink-0 ml-3">{message.time}</span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(message.created_at).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
                     ))
+                  ) : (
+                    <p className="text-gray-600 text-center py-8">No messages found.</p>
                   )}
                 </div>
-              </ScrollArea>
-            </section>
+              )}
+            </div>
 
-            {/* Right: Message Detail */}
-            <section className="lg:col-span-4 border rounded-lg">
-              <div className="p-3 flex items-center gap-2 border-b">
-                {selectedMessage ? (
-                  <>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}>
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                      <div className="text-sm font-medium">{selectedMessage.subject}</div>
-                      <div className="text-xs text-muted-foreground">From: {selectedMessage.sender} • {selectedMessage.time}</div>
+            {/* Message Detail */}
+            <div className="lg:w-1/4 space-y-4">
+              <h3 className="text-lg font-semibold">Message Details</h3>
+              
+              {selectedMessage ? (
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-lg mb-2">{selectedMessage.subject}</h4>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-sm text-gray-600">
+                          From: {selectedMessage.sender_profile 
+                            ? `${selectedMessage.sender_profile.first_name} ${selectedMessage.sender_profile.last_name}`
+                            : 'Unknown User'
+                          }
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          • {new Date(selectedMessage.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                  </>
-                ) : (
-                  <div className="text-sm text-muted-foreground">Select a conversation to read</div>
-                )}
-              </div>
-              <div className="p-4 h-[380px] overflow-auto">
-                {selectedMessage ? (
-                  <div className="whitespace-pre-line text-sm">{selectedMessage.fullContent}</div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">Nothing selected.</div>
-                )}
-              </div>
-              <div className="p-3 flex gap-2 border-t">
-                <Button size="sm" disabled={!selectedMessage}>Reply</Button>
-                <Button size="sm" variant="outline" disabled={!selectedMessage}>Forward</Button>
-              </div>
-            </section>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                      <p className="text-gray-800 whitespace-pre-wrap">{selectedMessage.content}</p>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex items-center gap-1">
+                        <Reply className="w-4 h-4" />
+                        Reply
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex items-center gap-1">
+                        <Forward className="w-4 h-4" />
+                        Forward
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  Select a message to view details
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
