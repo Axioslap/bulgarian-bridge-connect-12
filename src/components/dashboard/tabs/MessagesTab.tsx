@@ -391,6 +391,30 @@ const MessagesTab = () => {
         return group?.messageIds?.includes(msg.id) || false;
       });
 
+  // Group messages by conversation (sender-recipient pair)
+  const getConversationKey = (msg: Message) => {
+    const participants = [msg.sender_id, msg.recipient_id].sort();
+    return participants.join('-');
+  };
+
+  const conversations = filteredMessages.reduce((acc, msg) => {
+    const key = getConversationKey(msg);
+    if (!acc[key]) {
+      acc[key] = [];
+    }
+    acc[key].push(msg);
+    return acc;
+  }, {} as Record<string, Message[]>);
+
+  // Sort conversations by latest message
+  const sortedConversations = Object.entries(conversations)
+    .map(([key, msgs]) => ({
+      key,
+      messages: msgs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+      latestMessage: msgs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    }))
+    .sort((a, b) => new Date(b.latestMessage.created_at).getTime() - new Date(a.latestMessage.created_at).getTime());
+
   return (
     <div className="space-y-6">
       <Card>
@@ -404,9 +428,9 @@ const MessagesTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex h-[600px]">
             {/* Sidebar for Groups */}
-            <div className="lg:w-1/4 space-y-4">
+            <div className="w-1/4 border-r pr-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Users className="w-4 h-4" />
@@ -520,138 +544,232 @@ const MessagesTab = () => {
               )}
             </div>
 
-            {/* Messages List */}
-            <div className="lg:w-1/2 space-y-4">
+            {/* Conversations List */}
+            <div className="w-1/3 border-r px-4 space-y-4 overflow-y-auto">
               <h3 className="text-lg font-semibold">Conversations</h3>
               {loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading messages...</p>
+                  <p className="text-gray-600">Loading conversations...</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredMessages.length > 0 ? (
-                    filteredMessages.map((message) => (
-                      <div
-                        key={message.id}
-                        onClick={() => handleMessageClick(message.id)}
-                         className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
-                          selectedMessage?.id === message.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1" onClick={() => handleMessageClick(message.id)}>
-                             <div className="flex items-center gap-2 mb-1">
-                               <span className={`font-medium ${
-                                 message.recipient_id === user?.id && !message.is_read ? 'text-blue-600' : 'text-gray-900'
-                               }`}>
-                                 {message.sender_profile 
-                                   ? `${message.sender_profile.first_name} ${message.sender_profile.last_name}`
-                                   : 'Unknown User'
-                                 }
-                               </span>
-                               {message.recipient_id === user?.id && !message.is_read && (
-                                 <Badge variant="default" className="text-xs">New</Badge>
-                               )}
-                             </div>
-                             <p className={`font-medium text-sm mb-1 ${
-                               message.recipient_id === user?.id && !message.is_read ? 'text-gray-900' : 'text-gray-700'
-                             }`}>
-                               {message.subject}
-                             </p>
-                             <p className="text-sm text-gray-600 truncate mb-2">
-                               {message.content}
-                             </p>
-                             {message.tags && message.tags.length > 0 && (
-                               <div className="flex flex-wrap gap-1">
-                                 {message.tags.map((tag, index) => (
-                                   <Badge key={index} variant="secondary" className="text-xs">
-                                     {tag}
-                                   </Badge>
-                                 ))}
-                               </div>
-                             )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">
-                              {new Date(message.created_at).toLocaleDateString()}
-                            </span>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                               <DropdownMenuContent align="end">
-                                 <DropdownMenuItem
-                                   onClick={() => openTagDialog(message.id)}
-                                 >
-                                   <Tag className="mr-2 h-4 w-4" />
-                                   Add Custom Tag
-                                 </DropdownMenuItem>
-                                 {groups.filter(g => g.id !== "all").map(group => (
-                                   <DropdownMenuItem
-                                     key={group.id}
-                                     onClick={() => addToGroup(message.id, group.id)}
-                                   >
-                                     <Tag className="mr-2 h-4 w-4" />
-                                     Add to {group.name}
-                                   </DropdownMenuItem>
-                                 ))}
-                               </DropdownMenuContent>
-                            </DropdownMenu>
+                  {sortedConversations.length > 0 ? (
+                    sortedConversations.map((conversation) => {
+                      const otherParticipant = conversation.latestMessage.sender_id === user?.id 
+                        ? conversation.latestMessage.recipient_id 
+                        : conversation.latestMessage.sender_id;
+                      
+                      const participantName = conversation.latestMessage.sender_id === user?.id
+                        ? 'You'
+                        : conversation.latestMessage.sender_profile 
+                          ? `${conversation.latestMessage.sender_profile.first_name} ${conversation.latestMessage.sender_profile.last_name}`
+                          : 'Unknown User';
+
+                      const isSelected = selectedMessage && getConversationKey(selectedMessage) === conversation.key;
+                      
+                      return (
+                        <div
+                          key={conversation.key}
+                          onClick={() => handleMessageClick(conversation.latestMessage.id)}
+                          className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                            isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-gray-900">
+                                  {participantName}
+                                </span>
+                                {conversation.messages.some(m => m.recipient_id === user?.id && !m.is_read) && (
+                                  <Badge variant="default" className="text-xs">New</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600 truncate">
+                                {conversation.latestMessage.content}
+                              </p>
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="text-xs text-gray-500">
+                                  {new Date(conversation.latestMessage.created_at).toLocaleDateString()}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    <p className="text-gray-600 text-center py-8">No messages found.</p>
+                    <p className="text-gray-600 text-center py-8">No conversations found.</p>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Message Detail */}
-            <div className="lg:w-1/4 space-y-4">
-              <h3 className="text-lg font-semibold">Message Details</h3>
-              
+            {/* Conversation Thread */}
+            <div className="flex-1 flex flex-col">
               {selectedMessage ? (
-                <div className="space-y-4">
-                  <div className="p-4 border rounded-lg">
-                    <div className="mb-4">
-                      <h4 className="font-semibold text-lg mb-2">{selectedMessage.subject}</h4>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-sm text-gray-600">
-                          From: {selectedMessage.sender_profile 
-                            ? `${selectedMessage.sender_profile.first_name} ${selectedMessage.sender_profile.last_name}`
-                            : 'Unknown User'
+                <>
+                  {/* Conversation Header */}
+                  <div className="border-b p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {selectedMessage.sender_id === user?.id 
+                            ? 'You' 
+                            : selectedMessage.sender_profile 
+                              ? `${selectedMessage.sender_profile.first_name} ${selectedMessage.sender_profile.last_name}`
+                              : 'Unknown User'
                           }
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          • {new Date(selectedMessage.created_at).toLocaleDateString()}
-                        </span>
+                        </h3>
+                        <p className="text-sm text-gray-600">{selectedMessage.subject}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleReply} className="flex items-center gap-1">
+                          <Reply className="w-4 h-4" />
+                          Reply
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openTagDialog(selectedMessage.id)}>
+                              <Tag className="mr-2 h-4 w-4" />
+                              Add Custom Tag
+                            </DropdownMenuItem>
+                            {groups.filter(g => g.id !== "all").map(group => (
+                              <DropdownMenuItem
+                                key={group.id}
+                                onClick={() => addToGroup(selectedMessage.id, group.id)}
+                              >
+                                <Tag className="mr-2 h-4 w-4" />
+                                Add to {group.name}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-800 whitespace-pre-wrap">{selectedMessage.content}</p>
-                    </div>
-                    
+                  </div>
+
+                  {/* Messages Thread */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {(() => {
+                      const conversationKey = getConversationKey(selectedMessage);
+                      const conversationMessages = conversations[conversationKey] || [];
+                      
+                      return conversationMessages.map((message, index) => {
+                        const isFromUser = message.sender_id === user?.id;
+                        const showDate = index === 0 || 
+                          new Date(message.created_at).toDateString() !== 
+                          new Date(conversationMessages[index - 1].created_at).toDateString();
+                        
+                        return (
+                          <div key={message.id}>
+                            {showDate && (
+                              <div className="text-center my-4">
+                                <span className="bg-gray-100 text-gray-600 text-sm px-3 py-1 rounded-full">
+                                  {new Date(message.created_at).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                  })}
+                                </span>
+                              </div>
+                            )}
+                            
+                            <div className={`flex ${isFromUser ? 'justify-end' : 'justify-start'} mb-3`}>
+                              <div className={`max-w-[70%] ${isFromUser ? 'order-2' : 'order-1'}`}>
+                                {!isFromUser && (
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-sm font-medium">
+                                      {message.sender_profile 
+                                        ? `${message.sender_profile.first_name[0]}${message.sender_profile.last_name[0]}`
+                                        : 'U'
+                                      }
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-700">
+                                      {message.sender_profile 
+                                        ? `${message.sender_profile.first_name} ${message.sender_profile.last_name}`
+                                        : 'Unknown User'
+                                      }
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {new Date(message.created_at).toLocaleTimeString('en-US', { 
+                                        hour: 'numeric', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                <div className={`p-3 rounded-lg ${
+                                  isFromUser 
+                                    ? 'bg-blue-500 text-white ml-8' 
+                                    : 'bg-gray-100 text-gray-800 mr-8'
+                                }`}>
+                                  <p className="whitespace-pre-wrap">{message.content}</p>
+                                </div>
+                                
+                                {isFromUser && (
+                                  <div className="text-right mt-1">
+                                    <span className="text-xs text-gray-500">
+                                      {new Date(message.created_at).toLocaleTimeString('en-US', { 
+                                        hour: 'numeric', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {message.tags && message.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {message.tags.map((tag, tagIndex) => (
+                                      <Badge key={tagIndex} variant="secondary" className="text-xs">
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+
+                  {/* Message Input */}
+                  <div className="border-t p-4">
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={handleReply} className="flex items-center gap-1">
-                        <Reply className="w-4 h-4" />
-                        Reply
-                      </Button>
-                      <Button size="sm" variant="outline" className="flex items-center gap-1">
-                        <Forward className="w-4 h-4" />
-                        Forward
+                      <Input 
+                        placeholder="Write a message..." 
+                        className="flex-1"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            // Handle send message
+                          }
+                        }}
+                      />
+                      <Button size="sm">
+                        <Send className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-                </div>
+                </>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  Select a message to view details
+                <div className="flex-1 flex items-center justify-center text-gray-500">
+                  <div className="text-center">
+                    <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>Select a conversation to start messaging</p>
+                  </div>
                 </div>
               )}
             </div>
