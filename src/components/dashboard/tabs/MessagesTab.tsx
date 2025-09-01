@@ -12,6 +12,12 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   MessageCircle, 
   Users, 
@@ -19,8 +25,10 @@ import {
   Send, 
   Reply, 
   ArrowLeft,
-  Search,
-  MoreVertical
+  Tag,
+  MoreVertical,
+  Hash,
+  X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
@@ -38,15 +46,27 @@ interface Message {
     first_name: string;
     last_name: string;
   } | null;
+  recipient_profile?: {
+    first_name: string;
+    last_name: string;
+  } | null;
+}
+
+interface ConversationTag {
+  id: string;
+  name: string;
+  color: string;
 }
 
 interface Conversation {
   id: string;
+  participant_id: string;
   participantName: string;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
   messages: Message[];
+  tags: ConversationTag[];
 }
 
 const MessagesTab = () => {
@@ -54,10 +74,17 @@ const MessagesTab = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
+  const [isNewTagOpen, setIsNewTagOpen] = useState(false);
   const [newMessageContent, setNewMessageContent] = useState("");
   const [newMessageSubject, setNewMessageSubject] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState("#3b82f6");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [tags, setTags] = useState<ConversationTag[]>([]);
   const [currentView, setCurrentView] = useState<'list' | 'conversation'>('list');
+  const [replyMessage, setReplyMessage] = useState("");
+  const [recipients, setRecipients] = useState<any[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState("");
   
   const { user } = useMemberAuth();
   const { toast } = useToast();
@@ -65,6 +92,8 @@ const MessagesTab = () => {
   useEffect(() => {
     if (user) {
       fetchConversations();
+      fetchTags();
+      fetchRecipients();
     }
   }, [user]);
 
@@ -74,69 +103,93 @@ const MessagesTab = () => {
     try {
       setLoading(true);
       
-      // Create mock data for now since database seems to have connection issues
-      const mockConversations: Conversation[] = [
-        {
-          id: '1',
-          participantName: 'John Smith',
-          lastMessage: 'Thanks for the great presentation today!',
-          lastMessageTime: '2 hours ago',
-          unreadCount: 1,
-          messages: [
-            {
-              id: '1',
-              sender_id: 'other-user',
-              recipient_id: user.id,
-              subject: 'Great meeting',
-              content: 'Hi there! I wanted to follow up on our discussion about the new project.',
-              created_at: new Date(Date.now() - 3600000).toISOString(),
-              is_read: true,
-              sender_profile: { first_name: 'John', last_name: 'Smith' }
-            },
-            {
-              id: '2',
-              sender_id: user.id,
-              recipient_id: 'other-user',
-              subject: 'Re: Great meeting',
-              content: 'Thank you for reaching out! I appreciate your feedback.',
-              created_at: new Date(Date.now() - 1800000).toISOString(),
-              is_read: true,
-              sender_profile: null
-            },
-            {
-              id: '3',
-              sender_id: 'other-user',
-              recipient_id: user.id,
-              subject: 'Re: Great meeting',
-              content: 'Thanks for the great presentation today!',
-              created_at: new Date(Date.now() - 600000).toISOString(),
-              is_read: false,
-              sender_profile: { first_name: 'John', last_name: 'Smith' }
-            }
-          ]
-        },
-        {
-          id: '2',
-          participantName: 'Maria Garcia',
-          lastMessage: 'Looking forward to collaborating with you.',
-          lastMessageTime: '1 day ago',
-          unreadCount: 0,
-          messages: [
-            {
-              id: '4',
-              sender_id: 'other-user-2',
-              recipient_id: user.id,
-              subject: 'Partnership opportunity',
-              content: 'Hi! I saw your profile and think we could work together on some projects. Looking forward to collaborating with you.',
-              created_at: new Date(Date.now() - 86400000).toISOString(),
-              is_read: true,
-              sender_profile: { first_name: 'Maria', last_name: 'Garcia' }
-            }
-          ]
-        }
-      ];
+      // Fetch messages first
+      const { data: messages, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+
+      if (messagesError) throw messagesError;
+
+      // Fetch all profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name');
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles for quick lookup
+      const profileMap = new Map(
+        profiles?.map(p => [p.user_id, p]) || []
+      );
+
+      // Group messages by conversation partner
+      const conversationMap = new Map<string, Conversation>();
       
-      setConversations(mockConversations);
+      messages?.forEach((message) => {
+        const isFromUser = message.sender_id === user.id;
+        const partnerId = isFromUser ? message.recipient_id : message.sender_id;
+        const partnerProfile = profileMap.get(partnerId);
+        const partnerName = partnerProfile 
+          ? `${partnerProfile.first_name} ${partnerProfile.last_name}`
+          : 'Unknown User';
+
+        if (!conversationMap.has(partnerId)) {
+          conversationMap.set(partnerId, {
+            id: partnerId,
+            participant_id: partnerId,
+            participantName: partnerName,
+            lastMessage: message.content,
+            lastMessageTime: new Date(message.created_at).toLocaleDateString(),
+            unreadCount: 0,
+            messages: [],
+            tags: []
+          });
+        }
+
+        const conversation = conversationMap.get(partnerId)!;
+        
+        // Add profile information to message
+        const messageWithProfiles: Message = {
+          ...message,
+          sender_profile: profileMap.get(message.sender_id) || null,
+          recipient_profile: profileMap.get(message.recipient_id) || null
+        };
+        
+        conversation.messages.push(messageWithProfiles);
+        
+        // Count unread messages from partner
+        if (!isFromUser && !message.is_read) {
+          conversation.unreadCount++;
+        }
+      });
+
+      // Sort messages within each conversation by date
+      conversationMap.forEach(conversation => {
+        conversation.messages.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
+
+      // Fetch tags for conversations
+      const { data: tagAssignments } = await supabase
+        .from('conversation_tag_assignments')
+        .select(`
+          conversation_partner_id,
+          conversation_tags(id, name, color)
+        `)
+        .eq('user_id', user.id);
+
+      // Add tags to conversations
+      tagAssignments?.forEach(assignment => {
+        const conversation = conversationMap.get(assignment.conversation_partner_id);
+        if (conversation && assignment.conversation_tags) {
+          conversation.tags.push(assignment.conversation_tags);
+        }
+      });
+
+      setConversations(Array.from(conversationMap.values()));
     } catch (error) {
       console.error('Error fetching conversations:', error);
       toast({
@@ -146,6 +199,39 @@ const MessagesTab = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTags = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('conversation_tags')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name');
+
+      if (error) throw error;
+      setTags(data || []);
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  const fetchRecipients = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .neq('user_id', user.id);
+
+      if (error) throw error;
+      setRecipients(data || []);
+    } catch (error) {
+      console.error('Error fetching recipients:', error);
     }
   };
 
@@ -171,36 +257,29 @@ const MessagesTab = () => {
   };
 
   const sendNewMessage = async () => {
-    if (!newMessageContent.trim() || !newMessageSubject.trim()) return;
+    if (!newMessageContent.trim() || !newMessageSubject.trim() || !selectedRecipient) return;
     
     try {
-      // For demo purposes, just add to local state
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        sender_id: user!.id,
-        recipient_id: 'demo-user',
-        subject: newMessageSubject,
-        content: newMessageContent,
-        created_at: new Date().toISOString(),
-        is_read: false,
-        sender_profile: null
-      };
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user!.id,
+          recipient_id: selectedRecipient,
+          subject: newMessageSubject,
+          content: newMessageContent
+        })
+        .select()
+        .single();
 
-      setConversations(prev => {
-        const newConversation: Conversation = {
-          id: Date.now().toString(),
-          participantName: 'New Conversation',
-          lastMessage: newMessageContent,
-          lastMessageTime: 'Just now',
-          unreadCount: 0,
-          messages: [newMessage]
-        };
-        return [newConversation, ...prev];
-      });
+      if (error) throw error;
 
       setNewMessageContent("");
       setNewMessageSubject("");
+      setSelectedRecipient("");
       setIsNewMessageOpen(false);
+      
+      // Refresh conversations
+      fetchConversations();
       
       toast({
         title: "Message sent",
@@ -216,10 +295,119 @@ const MessagesTab = () => {
     }
   };
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.participantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const sendReply = async () => {
+    if (!replyMessage.trim() || !selectedConversation) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user!.id,
+          recipient_id: selectedConversation.participant_id,
+          subject: `Re: ${selectedConversation.messages[0]?.subject || 'Message'}`,
+          content: replyMessage
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setReplyMessage("");
+      
+      // Refresh conversations
+      fetchConversations();
+      
+      toast({
+        title: "Reply sent",
+        description: "Your reply has been sent successfully.",
+      });
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send reply.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createTag = async () => {
+    if (!newTagName.trim()) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('conversation_tags')
+        .insert({
+          user_id: user!.id,
+          name: newTagName,
+          color: newTagColor
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTags(prev => [...prev, data]);
+      setNewTagName("");
+      setNewTagColor("#3b82f6");
+      setIsNewTagOpen(false);
+      
+      toast({
+        title: "Tag created",
+        description: "Your new tag has been created successfully.",
+      });
+    } catch (error) {
+      console.error('Error creating tag:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create tag.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleConversationTag = async (conversationId: string, tagId: string) => {
+    if (!user) return;
+    
+    try {
+      // Check if tag is already assigned
+      const { data: existing } = await supabase
+        .from('conversation_tag_assignments')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('conversation_partner_id', conversationId)
+        .eq('tag_id', tagId)
+        .single();
+
+      if (existing) {
+        // Remove tag
+        await supabase
+          .from('conversation_tag_assignments')
+          .delete()
+          .eq('id', existing.id);
+      } else {
+        // Add tag
+        await supabase
+          .from('conversation_tag_assignments')
+          .insert({
+            user_id: user.id,
+            conversation_partner_id: conversationId,
+            tag_id: tagId
+          });
+      }
+      
+      // Refresh conversations
+      fetchConversations();
+    } catch (error) {
+      console.error('Error toggling tag:', error);
+    }
+  };
+
+  const filteredConversations = selectedTag
+    ? conversations.filter(conv => 
+        conv.tags.some(tag => tag.id === selectedTag)
+      )
+    : conversations;
 
   return (
     <div className="h-full flex flex-col">
@@ -250,40 +438,55 @@ const MessagesTab = () => {
                     New Message
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>New Message</DialogTitle>
-                    <DialogDescription>
-                      Send a new message to connect with other members
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Input
-                        placeholder="Subject"
-                        value={newMessageSubject}
-                        onChange={(e) => setNewMessageSubject(e.target.value)}
-                      />
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>New Message</DialogTitle>
+                      <DialogDescription>
+                        Send a new message to connect with other members
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">To</label>
+                        <select
+                          className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background"
+                          value={selectedRecipient}
+                          onChange={(e) => setSelectedRecipient(e.target.value)}
+                        >
+                          <option value="">Select a member...</option>
+                          {recipients.map((recipient) => (
+                            <option key={recipient.user_id} value={recipient.user_id}>
+                              {recipient.first_name} {recipient.last_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <Input
+                          placeholder="Subject"
+                          value={newMessageSubject}
+                          onChange={(e) => setNewMessageSubject(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Textarea
+                          placeholder="Type your message..."
+                          value={newMessageContent}
+                          onChange={(e) => setNewMessageContent(e.target.value)}
+                          rows={6}
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsNewMessageOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={sendNewMessage} disabled={!newMessageContent.trim() || !newMessageSubject.trim() || !selectedRecipient}>
+                          <Send className="w-4 h-4 mr-2" />
+                          Send Message
+                        </Button>
+                      </div>
                     </div>
-                    <div>
-                      <Textarea
-                        placeholder="Type your message..."
-                        value={newMessageContent}
-                        onChange={(e) => setNewMessageContent(e.target.value)}
-                        rows={6}
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsNewMessageOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={sendNewMessage} disabled={!newMessageContent.trim() || !newMessageSubject.trim()}>
-                        <Send className="w-4 h-4 mr-2" />
-                        Send Message
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
+                  </DialogContent>
               </Dialog>
             )}
           </div>
@@ -297,17 +500,82 @@ const MessagesTab = () => {
         <CardContent className="flex-1 flex flex-col">
           {currentView === 'list' ? (
             <>
-              {/* Search Bar */}
+              {/* Tag Filter */}
               <div className="flex items-center gap-2 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Search conversations..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="flex flex-wrap gap-2 flex-1">
+                  <Button
+                    variant={selectedTag === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedTag(null)}
+                  >
+                    All
+                  </Button>
+                  {tags.map((tag) => (
+                    <Button
+                      key={tag.id}
+                      variant={selectedTag === tag.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedTag(tag.id)}
+                      className="flex items-center gap-1"
+                      style={{ 
+                        backgroundColor: selectedTag === tag.id ? tag.color : undefined,
+                        borderColor: tag.color 
+                      }}
+                    >
+                      <Hash className="w-3 h-3" />
+                      {tag.name}
+                    </Button>
+                  ))}
                 </div>
+                <Dialog open={isNewTagOpen} onOpenChange={setIsNewTagOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Plus className="w-4 h-4 mr-1" />
+                      New Tag
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Tag</DialogTitle>
+                      <DialogDescription>
+                        Create a custom tag to organize your conversations
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Input
+                          placeholder="Tag name"
+                          value={newTagName}
+                          onChange={(e) => setNewTagName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Color</label>
+                        <div className="flex gap-2 mt-2">
+                          {['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'].map(color => (
+                            <button
+                              key={color}
+                              className="w-8 h-8 rounded-full border-2"
+                              style={{ 
+                                backgroundColor: color,
+                                borderColor: newTagColor === color ? '#000' : 'transparent'
+                              }}
+                              onClick={() => setNewTagColor(color)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsNewTagOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={createTag} disabled={!newTagName.trim()}>
+                          Create Tag
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               {/* Conversations List */}
@@ -345,11 +613,57 @@ const MessagesTab = () => {
                                   <p className="text-sm text-muted-foreground truncate">
                                     {conversation.lastMessage}
                                   </p>
+                                  {conversation.tags.length > 0 && (
+                                    <div className="flex gap-1 mt-1">
+                                      {conversation.tags.map((tag) => (
+                                        <Badge 
+                                          key={tag.id} 
+                                          variant="outline" 
+                                          className="text-xs"
+                                          style={{ borderColor: tag.color, color: tag.color }}
+                                        >
+                                          {tag.name}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {conversation.lastMessageTime}
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="text-xs text-muted-foreground">
+                                {conversation.lastMessageTime}
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                    <MoreVertical className="w-3 h-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {tags.map((tag) => (
+                                    <DropdownMenuItem
+                                      key={tag.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleConversationTag(conversation.participant_id, tag.id);
+                                      }}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <div 
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: tag.color }}
+                                      />
+                                      {conversation.tags.some(t => t.id === tag.id) ? (
+                                        <X className="w-3 h-3" />
+                                      ) : (
+                                        <Plus className="w-3 h-3" />
+                                      )}
+                                      {tag.name}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                         </div>
@@ -447,13 +761,15 @@ const MessagesTab = () => {
                     <Input 
                       placeholder="Type your reply..." 
                       className="flex-1"
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
-                          // Handle send message
+                          sendReply();
                         }
                       }}
                     />
-                    <Button size="sm">
+                    <Button size="sm" onClick={sendReply} disabled={!replyMessage.trim()}>
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
