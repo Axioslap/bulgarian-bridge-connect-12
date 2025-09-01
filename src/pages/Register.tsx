@@ -251,7 +251,7 @@ const Register = () => {
         
         toast({
           title: "Email Already Registered",
-          description: "This email is already registered in our system.",
+          description: "This email is already registered. Please use another email or select 'Forgot Password?' to reset your account.",
           variant: "destructive",
           action: (
             <div className="flex flex-col gap-2">
