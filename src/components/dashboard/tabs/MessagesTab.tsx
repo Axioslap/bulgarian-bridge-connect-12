@@ -25,6 +25,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
   MessageCircle, 
   Users, 
   Plus, 
@@ -32,7 +38,10 @@ import {
   Trash2, 
   Send, 
   Reply, 
-  Forward 
+  Forward,
+  MoreVertical,
+  Archive,
+  Tag
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
@@ -50,13 +59,23 @@ interface Message {
   sender_profile?: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
+  recipient_profile?: {
+    first_name: string;
+    last_name: string;
+  } | null;
 }
 
 interface Group {
   id: string;
   name: string;
-  members: string[];
+  messageIds: string[];
+}
+
+interface Profile {
+  first_name: string;
+  last_name: string;
+  id: string;
 }
 
 const MessagesTab = () => {
@@ -64,7 +83,9 @@ const MessagesTab = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<Group[]>([
-    { id: "all", name: "All Messages", members: [] },
+    { id: "all", name: "All Messages", messageIds: [] },
+    { id: "important", name: "Important", messageIds: [] },
+    { id: "archived", name: "Archived", messageIds: [] },
   ]);
 
   const [activeGroup, setActiveGroup] = useState("all");
@@ -73,6 +94,10 @@ const MessagesTab = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [renamingGroup, setRenamingGroup] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
+  const [isReplyOpen, setIsReplyOpen] = useState(false);
+  const [replyContent, setReplyContent] = useState("");
+  const [replySubject, setReplySubject] = useState("");
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   
   const { user } = useMemberAuth();
   const { toast } = useToast();
@@ -80,6 +105,7 @@ const MessagesTab = () => {
   useEffect(() => {
     if (user) {
       fetchMessages();
+      fetchProfiles();
     }
   }, [user]);
 
@@ -87,18 +113,50 @@ const MessagesTab = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      // First get messages without joins
+      const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setMessages(data || []);
+      if (messagesError) throw messagesError;
+
+      // Then get profile data for each message
+      const messagesWithProfiles = await Promise.all(
+        (messagesData || []).map(async (message) => {
+          const { data: senderProfile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', message.sender_id)
+            .single();
+
+          return {
+            ...message,
+            sender_profile: senderProfile
+          };
+        })
+      );
+
+      setMessages(messagesWithProfiles);
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .neq('user_id', user?.id || '');
+
+      if (error) throw error;
+      setAllProfiles(data || []);
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
     }
   };
 
@@ -145,7 +203,7 @@ const MessagesTab = () => {
     const newGroup: Group = {
       id: Date.now().toString(),
       name: newGroupName,
-      members: []
+      messageIds: []
     };
     
     setGroups([...groups, newGroup]);
@@ -195,10 +253,80 @@ const MessagesTab = () => {
     });
   };
 
+  const addToGroup = (messageId: string, groupId: string) => {
+    setGroups(prev => prev.map(group => 
+      group.id === groupId 
+        ? { ...group, messageIds: [...new Set([...group.messageIds, messageId])] }
+        : group
+    ));
+    
+    toast({
+      title: "Message added to group",
+      description: `Message added to ${groups.find(g => g.id === groupId)?.name}`,
+    });
+  };
+
+  const removeFromGroup = (messageId: string, groupId: string) => {
+    setGroups(prev => prev.map(group => 
+      group.id === groupId 
+        ? { ...group, messageIds: group.messageIds.filter(id => id !== messageId) }
+        : group
+    ));
+  };
+
+  const handleReply = () => {
+    if (!selectedMessage) return;
+    
+    const senderName = selectedMessage.sender_profile 
+      ? `${selectedMessage.sender_profile.first_name} ${selectedMessage.sender_profile.last_name}`
+      : 'Unknown User';
+    
+    setReplySubject(`Re: ${selectedMessage.subject}`);
+    setReplyContent(`\n\n--- Original message from ${senderName} ---\n${selectedMessage.content}`);
+    setIsReplyOpen(true);
+  };
+
+  const sendReply = async () => {
+    if (!selectedMessage || !replyContent.trim() || !user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          recipient_id: selectedMessage.sender_id,
+          subject: replySubject,
+          content: replyContent,
+        });
+
+      if (error) throw error;
+      
+      setIsReplyOpen(false);
+      setReplyContent("");
+      setReplySubject("");
+      fetchMessages();
+      
+      toast({
+        title: "Reply sent",
+        description: "Your reply has been sent successfully.",
+      });
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send reply.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Filter messages based on active group
   const filteredMessages = activeGroup === "all" 
     ? messages 
-    : messages; // For now, show all messages regardless of group
+    : messages.filter(msg => {
+        const group = groups.find(g => g.id === activeGroup);
+        return group?.messageIds.includes(msg.id) || false;
+      });
 
   return (
     <div className="space-y-6">
@@ -344,12 +472,12 @@ const MessagesTab = () => {
                       <div
                         key={message.id}
                         onClick={() => handleMessageClick(message.id)}
-                        className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                         className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
                           selectedMessage?.id === message.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
                         }`}
                       >
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
+                          <div className="flex-1" onClick={() => handleMessageClick(message.id)}>
                             <div className="flex items-center gap-2 mb-1">
                               <span className={`font-medium ${
                                 message.recipient_id === user?.id && !message.is_read ? 'text-blue-600' : 'text-gray-900'
@@ -372,9 +500,29 @@ const MessagesTab = () => {
                               {message.content}
                             </p>
                           </div>
-                          <span className="text-xs text-gray-500">
-                            {new Date(message.created_at).toLocaleDateString()}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">
+                              {new Date(message.created_at).toLocaleDateString()}
+                            </span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {groups.filter(g => g.id !== "all").map(group => (
+                                  <DropdownMenuItem
+                                    key={group.id}
+                                    onClick={() => addToGroup(message.id, group.id)}
+                                  >
+                                    <Tag className="mr-2 h-4 w-4" />
+                                    Add to {group.name}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </div>
                     ))
@@ -412,7 +560,7 @@ const MessagesTab = () => {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex items-center gap-1">
+                      <Button size="sm" onClick={handleReply} className="flex items-center gap-1">
                         <Reply className="w-4 h-4" />
                         Reply
                       </Button>
@@ -432,6 +580,51 @@ const MessagesTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reply Dialog */}
+      <Dialog open={isReplyOpen} onOpenChange={setIsReplyOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Reply to Message</DialogTitle>
+            <DialogDescription>
+              Send a reply to {selectedMessage?.sender_profile 
+                ? `${selectedMessage.sender_profile.first_name} ${selectedMessage.sender_profile.last_name}`
+                : 'this user'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="replySubject">Subject</Label>
+              <Input
+                id="replySubject"
+                value={replySubject}
+                onChange={(e) => setReplySubject(e.target.value)}
+                placeholder="Reply subject..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="replyContent">Message</Label>
+              <Textarea
+                id="replyContent"
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                placeholder="Type your reply..."
+                rows={8}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsReplyOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={sendReply} disabled={!replyContent.trim()}>
+                <Send className="w-4 h-4 mr-2" />
+                Send Reply
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
