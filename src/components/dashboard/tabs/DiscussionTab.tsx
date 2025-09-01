@@ -30,11 +30,15 @@ const DiscussionTab = () => {
         .from('discussions')
         .select(`
           *,
-          profiles:user_id (first_name, last_name)
+          profiles!discussions_user_id_fkey (first_name, last_name)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching discussions:', error);
+        return;
+      }
+      
       setDiscussions(data || []);
     } catch (error) {
       console.error('Error fetching discussions:', error);
@@ -162,7 +166,7 @@ const DiscussionTab = () => {
                         id: post.id,
                         title: post.title,
                         content: post.content,
-                        author: post.profiles ? `${post.profiles.first_name} ${post.profiles.last_name}` : 'Unknown',
+                        author: post.profiles ? `${post.profiles.first_name || ''} ${post.profiles.last_name || ''}`.trim() : 'Unknown User',
                         timeAgo: new Date(post.created_at).toLocaleDateString(),
                         likes: post.likes_count,
                         comments: post.comments_count,
@@ -187,7 +191,7 @@ const DiscussionTab = () => {
                         id: post.id,
                         title: post.title,
                         content: post.content,
-                        author: post.profiles ? `${post.profiles.first_name} ${post.profiles.last_name}` : 'Unknown',
+                        author: post.profiles ? `${post.profiles.first_name || ''} ${post.profiles.last_name || ''}`.trim() : 'Unknown User',
                         timeAgo: new Date(post.created_at).toLocaleDateString(),
                         likes: post.likes_count,
                         comments: post.comments_count,
