@@ -40,7 +40,7 @@ const WelcomeCard = ({ userProfile }: WelcomeCardProps) => {
           </div>
           <div>
             <h3 className="font-medium text-sm mb-1 text-gray-700">Education</h3>
-            <p className="text-sm text-gray-600">{userProfile.usEducation}</p>
+            <p className="text-sm text-gray-600">{userProfile?.usEducation || 'Not specified'}</p>
           </div>
         </div>
         <div>
