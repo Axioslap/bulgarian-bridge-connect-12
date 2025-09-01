@@ -200,15 +200,28 @@ const Register = () => {
     setIsSubmitting(true);
 
     try {
-      // Sign up with Supabase Auth
+      // Sign up with Supabase Auth - the trigger will handle profile creation
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/login`,
           data: {
             first_name: formData.firstName,
-            last_name: formData.lastName
+            last_name: formData.lastName,
+            university: formData.university,
+            job_title: formData.jobTitle,
+            company: formData.company,
+            country: formData.country,
+            city: formData.city,
+            areas_of_interest: formData.areasOfInterest,
+            reason_for_joining: formData.reasonForJoining,
+            willing_to_mentor: formData.willingToMentor,
+            linkedin_profile: formData.linkedinProfile,
+            referral_member: formData.referralMember,
+            membership_type: selectedMembership || 'free',
+            agree_to_terms: formData.agreeToTerms,
+            agree_to_newsletter: formData.agreeToNewsletter
           }
         }
       });
@@ -219,45 +232,13 @@ const Register = () => {
         throw new Error('User creation failed');
       }
 
-      // Upload profile photo if provided
-      let profilePhotoUrl = null;
-      if (profilePhoto) {
-        profilePhotoUrl = await uploadProfilePhoto(authData.user.id);
-      }
-
-      // Create profile record
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: authData.user.id,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          university: formData.university,
-          job_title: formData.jobTitle,
-          company: formData.company,
-          country: formData.country,
-          city: formData.city,
-          areas_of_interest: formData.areasOfInterest,
-          reason_for_joining: formData.reasonForJoining,
-          willing_to_mentor: formData.willingToMentor,
-          linkedin_profile: formData.linkedinProfile,
-          referral_member: formData.referralMember,
-          profile_photo_url: profilePhotoUrl,
-          membership_type: selectedMembership || 'free',
-          agree_to_terms: formData.agreeToTerms,
-          agree_to_newsletter: formData.agreeToNewsletter
-        });
-
-      if (profileError) throw profileError;
-
       toast({
         title: "Registration Successful!",
-        description: "Welcome to ABTC Bulgaria. Please check your email to verify your account."
+        description: "Please check your email to verify your account before logging in."
       });
 
-      // Redirect to home or dashboard
-      navigate('/');
+      // Redirect to login page 
+      navigate('/login');
 
     } catch (error: any) {
       console.error('Registration error:', error);
