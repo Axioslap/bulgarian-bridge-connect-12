@@ -194,6 +194,7 @@ export type Database = {
           recipient_id: string
           sender_id: string
           subject: string
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -204,6 +205,7 @@ export type Database = {
           recipient_id: string
           sender_id: string
           subject: string
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -214,6 +216,7 @@ export type Database = {
           recipient_id?: string
           sender_id?: string
           subject?: string
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: []

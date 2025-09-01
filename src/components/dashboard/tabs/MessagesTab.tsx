@@ -56,6 +56,7 @@ interface Message {
   content: string;
   created_at: string;
   is_read: boolean;
+  tags?: string[];
   sender_profile?: {
     first_name: string;
     last_name: string;
@@ -98,6 +99,9 @@ const MessagesTab = () => {
   const [replyContent, setReplyContent] = useState("");
   const [replySubject, setReplySubject] = useState("");
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [newTag, setNewTag] = useState("");
+  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
+  const [taggedMessageId, setTaggedMessageId] = useState<string | null>(null);
   
   const { user } = useMemberAuth();
   const { toast } = useToast();
@@ -320,6 +324,65 @@ const MessagesTab = () => {
     }
   };
 
+  const handleAddTag = async () => {
+    if (!newTag.trim() || !taggedMessageId) return;
+    
+    try {
+      const message = messages.find(m => m.id === taggedMessageId);
+      const currentTags = message?.tags || [];
+      const updatedTags = [...new Set([...currentTags, newTag.trim()])];
+      
+      const { error } = await supabase
+        .from('messages')
+        .update({ tags: updatedTags })
+        .eq('id', taggedMessageId);
+
+      if (error) throw error;
+
+      // Auto-create group if it doesn't exist
+      const existingGroup = groups.find(g => g.name.toLowerCase() === newTag.trim().toLowerCase());
+      if (!existingGroup) {
+        const newGroup: Group = {
+          id: Date.now().toString(),
+          name: newTag.trim(),
+          messageIds: [taggedMessageId]
+        };
+        setGroups(prev => [...prev, newGroup]);
+      } else {
+        // Add message to existing group
+        addToGroup(taggedMessageId, existingGroup.id);
+      }
+
+      // Update local state
+      setMessages(prev => prev.map(m => 
+        m.id === taggedMessageId 
+          ? { ...m, tags: updatedTags }
+          : m
+      ));
+
+      setNewTag("");
+      setIsTagDialogOpen(false);
+      setTaggedMessageId(null);
+      
+      toast({
+        title: "Tag added",
+        description: `Message tagged with "${newTag.trim()}" and added to group.`,
+      });
+    } catch (error) {
+      console.error('Error adding tag:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add tag.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openTagDialog = (messageId: string) => {
+    setTaggedMessageId(messageId);
+    setIsTagDialogOpen(true);
+  };
+
   // Filter messages based on active group
   const filteredMessages = activeGroup === "all" 
     ? messages 
@@ -478,27 +541,36 @@ const MessagesTab = () => {
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1" onClick={() => handleMessageClick(message.id)}>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`font-medium ${
-                                message.recipient_id === user?.id && !message.is_read ? 'text-blue-600' : 'text-gray-900'
-                              }`}>
-                                {message.sender_profile 
-                                  ? `${message.sender_profile.first_name} ${message.sender_profile.last_name}`
-                                  : 'Unknown User'
-                                }
-                              </span>
-                              {message.recipient_id === user?.id && !message.is_read && (
-                                <Badge variant="default" className="text-xs">New</Badge>
-                              )}
-                            </div>
-                            <p className={`font-medium text-sm mb-1 ${
-                              message.recipient_id === user?.id && !message.is_read ? 'text-gray-900' : 'text-gray-700'
-                            }`}>
-                              {message.subject}
-                            </p>
-                            <p className="text-sm text-gray-600 truncate">
-                              {message.content}
-                            </p>
+                             <div className="flex items-center gap-2 mb-1">
+                               <span className={`font-medium ${
+                                 message.recipient_id === user?.id && !message.is_read ? 'text-blue-600' : 'text-gray-900'
+                               }`}>
+                                 {message.sender_profile 
+                                   ? `${message.sender_profile.first_name} ${message.sender_profile.last_name}`
+                                   : 'Unknown User'
+                                 }
+                               </span>
+                               {message.recipient_id === user?.id && !message.is_read && (
+                                 <Badge variant="default" className="text-xs">New</Badge>
+                               )}
+                             </div>
+                             <p className={`font-medium text-sm mb-1 ${
+                               message.recipient_id === user?.id && !message.is_read ? 'text-gray-900' : 'text-gray-700'
+                             }`}>
+                               {message.subject}
+                             </p>
+                             <p className="text-sm text-gray-600 truncate mb-2">
+                               {message.content}
+                             </p>
+                             {message.tags && message.tags.length > 0 && (
+                               <div className="flex flex-wrap gap-1">
+                                 {message.tags.map((tag, index) => (
+                                   <Badge key={index} variant="secondary" className="text-xs">
+                                     {tag}
+                                   </Badge>
+                                 ))}
+                               </div>
+                             )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-500">
@@ -510,17 +582,23 @@ const MessagesTab = () => {
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {groups.filter(g => g.id !== "all").map(group => (
-                                  <DropdownMenuItem
-                                    key={group.id}
-                                    onClick={() => addToGroup(message.id, group.id)}
-                                  >
-                                    <Tag className="mr-2 h-4 w-4" />
-                                    Add to {group.name}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
+                               <DropdownMenuContent align="end">
+                                 <DropdownMenuItem
+                                   onClick={() => openTagDialog(message.id)}
+                                 >
+                                   <Tag className="mr-2 h-4 w-4" />
+                                   Add Custom Tag
+                                 </DropdownMenuItem>
+                                 {groups.filter(g => g.id !== "all").map(group => (
+                                   <DropdownMenuItem
+                                     key={group.id}
+                                     onClick={() => addToGroup(message.id, group.id)}
+                                   >
+                                     <Tag className="mr-2 h-4 w-4" />
+                                     Add to {group.name}
+                                   </DropdownMenuItem>
+                                 ))}
+                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
                         </div>
@@ -620,6 +698,38 @@ const MessagesTab = () => {
               <Button onClick={sendReply} disabled={!replyContent.trim()}>
                 <Send className="w-4 h-4 mr-2" />
                 Send Reply
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tag Dialog */}
+      <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Custom Tag</DialogTitle>
+            <DialogDescription>
+              Add a custom tag to this message. If a group with this name doesn't exist, it will be created automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newTag">Tag Name</Label>
+              <Input
+                id="newTag"
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                placeholder="Enter tag name..."
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsTagDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddTag} disabled={!newTag.trim()}>
+                <Tag className="w-4 h-4 mr-2" />
+                Add Tag
               </Button>
             </div>
           </div>
