@@ -163,10 +163,9 @@ const DiscussionTab = () => {
                         title: post.title,
                         content: post.content,
                         author: post.profiles ? `${post.profiles.first_name} ${post.profiles.last_name}` : 'Unknown',
-                        avatar: '',
                         timeAgo: new Date(post.created_at).toLocaleDateString(),
                         likes: post.likes_count,
-                        comments: 0,
+                        comments: post.comments_count,
                         tags: post.tags || []
                       }} 
                     />
@@ -189,10 +188,9 @@ const DiscussionTab = () => {
                         title: post.title,
                         content: post.content,
                         author: post.profiles ? `${post.profiles.first_name} ${post.profiles.last_name}` : 'Unknown',
-                        avatar: '',
                         timeAgo: new Date(post.created_at).toLocaleDateString(),
                         likes: post.likes_count,
-                        comments: 0,
+                        comments: post.comments_count,
                         tags: post.tags || []
                       }} 
                     />
