@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import SkillTag from "@/components/SkillTag";
 import { supabase } from "@/integrations/supabase/client";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const SearchTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,6 +21,12 @@ const SearchTab = () => {
   });
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [messageSubject, setMessageSubject] = useState("");
+  const [messageContent, setMessageContent] = useState("");
+  const { user } = useMemberAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchMembers();
@@ -66,6 +76,62 @@ const SearchTab = () => {
       education: "", 
       businessInterest: "all"
     });
+  };
+
+  const handleMessageClick = (member: any) => {
+    setSelectedMember(member);
+    setMessageSubject("");
+    setMessageContent("");
+    setMessageDialogOpen(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!user || !selectedMember) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to send messages.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!messageSubject.trim() || !messageContent.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in both subject and message content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          recipient_id: selectedMember.user_id,
+          subject: messageSubject,
+          content: messageContent
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Message sent successfully!",
+        description: `Your message has been sent to ${selectedMember.first_name} ${selectedMember.last_name}.`,
+      });
+      
+      setMessageDialogOpen(false);
+      setSelectedMember(null);
+      setMessageSubject("");
+      setMessageContent("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -180,7 +246,11 @@ const SearchTab = () => {
                         <Button size="sm" variant="outline" className="text-xs flex-1 sm:flex-none sm:w-24">
                           View Profile
                         </Button>
-                        <Button size="sm" className="text-xs flex-1 sm:flex-none sm:w-24">
+                        <Button 
+                          size="sm" 
+                          className="text-xs flex-1 sm:flex-none sm:w-24"
+                          onClick={() => handleMessageClick(member)}
+                        >
                           Message
                         </Button>
                       </div>
@@ -197,6 +267,44 @@ const SearchTab = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Send Message</DialogTitle>
+            <DialogDescription>
+              Send a message to {selectedMember?.first_name} {selectedMember?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Subject</label>
+              <Input
+                placeholder="Message subject..."
+                value={messageSubject}
+                onChange={(e) => setMessageSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Message</label>
+              <Textarea
+                placeholder="Type your message here..."
+                value={messageContent}
+                onChange={(e) => setMessageContent(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setMessageDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSendMessage}>
+                Send Message
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
