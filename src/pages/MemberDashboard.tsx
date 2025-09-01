@@ -24,6 +24,7 @@ import AppMemberSidebar from "@/components/dashboard/AppMemberSidebar";
 const MemberDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const {
+    user,
     userProfile,
     userSkills,
     setUserSkills,
@@ -33,16 +34,16 @@ const MemberDashboard = () => {
   } = useMemberAuth();
 
   // Show loading if user profile not loaded yet
-  if (!userProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  // Show dashboard immediately even if profile is still loading
+  const displayProfile = userProfile || {
+    name: 'Member',
+    email: user?.email || '',
+    role: 'Member',
+    joinDate: 'Recently joined',
+    bio: 'Loading profile...',
+    skills: [],
+    areas_of_interest: []
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -83,13 +84,13 @@ const MemberDashboard = () => {
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full">
         <MemberDashboardHeader 
-          userProfile={userProfile} 
+          userProfile={displayProfile} 
           onLogout={handleLogout} 
         />
 
         <div className="flex flex-1 w-full">
           <AppMemberSidebar 
-            userProfile={userProfile}
+            userProfile={displayProfile}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
           />
@@ -97,7 +98,7 @@ const MemberDashboard = () => {
           <SidebarInset>
             <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-screen flex flex-col">
               <MemberDashboardLayout
-                userProfile={userProfile}
+                userProfile={displayProfile}
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
               >

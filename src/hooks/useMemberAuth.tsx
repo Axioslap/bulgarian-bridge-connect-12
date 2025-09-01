@@ -43,7 +43,7 @@ export const useMemberAuth = () => {
           .from('profiles')
           .select('*')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
         
         if (!mounted) return;
         
