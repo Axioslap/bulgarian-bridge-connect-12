@@ -132,6 +132,27 @@ const Register = () => {
     return publicUrl;
   };
 
+  const handlePasswordReset = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for password reset instructions.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleMembershipSelect = (type: 'free' | 'supporter' | 'annual') => {
     setSelectedMembership(type);
     setCurrentStep('registration');
@@ -240,11 +261,41 @@ const Register = () => {
 
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast({
-        title: "Registration Failed",
-        description: error.message || "An error occurred during registration. Please try again.",
-        variant: "destructive"
-      });
+      
+      // Check if user already exists
+      if (error.message?.includes('User already registered') || 
+          error.message?.includes('user_repeated_signup') ||
+          error.code === '23505' || // Unique constraint violation
+          error.message?.includes('already been registered')) {
+        
+        toast({
+          title: "Email Already Registered",
+          description: "This email is already registered in our system.",
+          variant: "destructive",
+          action: (
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handlePasswordReset(formData.email)}
+                className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm hover:bg-primary/90"
+              >
+                Reset Password
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                className="px-3 py-1 bg-secondary text-secondary-foreground rounded text-sm hover:bg-secondary/80"
+              >
+                Go to Login
+              </button>
+            </div>
+          )
+        });
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: error.message || "An error occurred during registration. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
