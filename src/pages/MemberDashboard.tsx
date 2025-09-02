@@ -23,6 +23,8 @@ import AppMemberSidebar from "@/components/dashboard/AppMemberSidebar";
 
 const MemberDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [isInConversationView, setIsInConversationView] = useState(false);
+  const [resetToMessagesList, setResetToMessagesList] = useState<(() => void) | null>(null);
   const {
     user,
     userProfile,
@@ -52,7 +54,10 @@ const MemberDashboard = () => {
       case "discussion":
         return <DiscussionTab />;
       case "messages":
-        return <MessagesTab />;
+        return <MessagesTab 
+          onViewChange={setIsInConversationView}
+          onResetToListRegister={setResetToMessagesList}
+        />;
       case "search":
         return <SearchTab />;
       case "profile":
@@ -94,6 +99,8 @@ const MemberDashboard = () => {
             userProfile={displayProfile}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            isInConversationView={isInConversationView}
+            onMessagesReset={resetToMessagesList}
           />
 
           <SidebarInset>

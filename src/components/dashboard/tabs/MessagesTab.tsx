@@ -34,6 +34,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { useToast } from "@/hooks/use-toast";
 
+interface MessagesTabProps {
+  onViewChange?: (isInConversation: boolean) => void;
+  onResetToListRegister?: (resetFn: () => void) => void;
+}
+
 interface Message {
   id: string;
   sender_id: string;
@@ -69,7 +74,7 @@ interface Conversation {
   tags: ConversationTag[];
 }
 
-const MessagesTab = () => {
+const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -291,6 +296,15 @@ const MessagesTab = () => {
     setCurrentView('list');
     setSelectedConversation(null);
   };
+
+  // Register the reset function with parent and notify view changes
+  useEffect(() => {
+    onResetToListRegister?.(handleBackToList);
+  }, [onResetToListRegister]);
+
+  useEffect(() => {
+    onViewChange?.(currentView === 'conversation');
+  }, [currentView, onViewChange]);
 
   const sendNewMessage = async () => {
     if (!newMessageContent.trim() || !newMessageSubject.trim() || !selectedRecipient) return;

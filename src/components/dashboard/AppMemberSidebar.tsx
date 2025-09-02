@@ -23,9 +23,11 @@ interface AppMemberSidebarProps {
   };
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isInConversationView?: boolean;
+  onMessagesReset?: (() => void) | null;
 }
 
-const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab }: AppMemberSidebarProps) => {
+const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab, isInConversationView, onMessagesReset }: AppMemberSidebarProps) => {
   const unreadMessageCount = mockMessages.filter((m) => m.unread).length;
 
   const groups = [
@@ -89,7 +91,13 @@ const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab }: AppMemberSid
                     <SidebarMenuItem key={key}>
                       <SidebarMenuButton
                         isActive={activeTab === key}
-                        onClick={() => setActiveTab(key)}
+                        onClick={() => {
+                          if (key === 'messages' && isInConversationView && onMessagesReset) {
+                            onMessagesReset();
+                          } else {
+                            setActiveTab(key);
+                          }
+                        }}
                         tooltip={label}
                       >
                         <Icon />
