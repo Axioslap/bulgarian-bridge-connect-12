@@ -273,12 +273,29 @@ const MessagesTab = () => {
     }
 
     // Auto-scroll to the latest message after conversation loads
-    setTimeout(() => {
-      const messagesContainer = document.querySelector('.messages-container');
-      if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
-    }, 100);
+  // Auto-scroll to the latest message after conversation loads
+function scrollToLatestMessage() {
+  const messagesContainer = document.querySelector('.messages-container');
+  if (messagesContainer) {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+}
+
+// Run once after page load
+window.addEventListener('load', () => {
+  setTimeout(scrollToLatestMessage, 200);
+});
+
+// Run again whenever new messages are added
+const observer = new MutationObserver(() => {
+  scrollToLatestMessage();
+});
+
+const target = document.querySelector('.messages-container');
+if (target) {
+  observer.observe(target, { childList: true, subtree: true });
+}
+
   };
 
   const handleBackToList = () => {
