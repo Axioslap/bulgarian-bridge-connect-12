@@ -94,6 +94,28 @@ const MessagesTab = () => {
       fetchConversations();
       fetchTags();
       fetchRecipients();
+      
+      // Set up real-time listener for messages
+      const channel = supabase
+        .channel('messages_realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'messages',
+            filter: `or(sender_id.eq.${user.id},recipient_id.eq.${user.id})`
+          },
+          (payload) => {
+            console.log('Message update received:', payload);
+            fetchConversations();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user]);
 
@@ -312,10 +334,49 @@ const MessagesTab = () => {
 
       if (error) throw error;
 
+      // Fetch profile data for the new message
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', [data.sender_id, data.recipient_id]);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      // Add the new reply to the current conversation immediately
+      if (selectedConversation) {
+        const newMessage: Message = {
+          id: data.id,
+          sender_id: data.sender_id,
+          recipient_id: data.recipient_id,
+          subject: data.subject,
+          content: data.content,
+          created_at: data.created_at,
+          is_read: data.is_read,
+          sender_profile: profileMap.get(data.sender_id) || null,
+          recipient_profile: profileMap.get(data.recipient_id) || null
+        };
+        
+        setSelectedConversation(prev => ({
+          ...prev!,
+          messages: [...prev!.messages, newMessage]
+        }));
+        
+        // Update conversations list
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.id === selectedConversation.id 
+              ? { 
+                  ...conv, 
+                  messages: [...conv.messages, newMessage],
+                  lastMessage: newMessage.content,
+                  lastMessageTime: new Date(newMessage.created_at).toLocaleDateString()
+                }
+              : conv
+          )
+        );
+      }
+
       setReplyMessage("");
-      
-      // Refresh conversations
-      fetchConversations();
       
       toast({
         title: "Reply sent",
@@ -420,7 +481,6 @@ const MessagesTab = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleBackToList}
-                  className="lg:hidden"
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
