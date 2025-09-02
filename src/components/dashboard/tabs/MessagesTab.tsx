@@ -271,6 +271,14 @@ const MessagesTab = () => {
         )
       );
     }
+
+    // Auto-scroll to the latest message after conversation loads
+    setTimeout(() => {
+      const messagesContainer = document.querySelector('.messages-container');
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }, 100);
   };
 
   const handleBackToList = () => {
@@ -378,10 +386,13 @@ const MessagesTab = () => {
 
       setReplyMessage("");
       
-      toast({
-        title: "Reply sent",
-        description: "Your reply has been sent successfully.",
-      });
+      // Auto-scroll to the latest message after reply is sent
+      setTimeout(() => {
+        const messagesContainer = document.querySelector('.messages-container');
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      }, 100);
     } catch (error) {
       console.error('Error sending reply:', error);
       toast({
@@ -742,7 +753,7 @@ const MessagesTab = () => {
             selectedConversation && (
               <div className="flex-1 flex flex-col">
                 {/* Messages Thread */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 messages-container">
                   {selectedConversation.messages.map((message, index) => {
                     const isFromUser = message.sender_id === user?.id;
                     const showDate = index === 0 || 
