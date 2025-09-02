@@ -850,9 +850,10 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
 
                 {/* Message Input */}
                 <div className="border-t p-4">
-                  <div className="space-y-2">
+                  <div className="flex gap-2">
                     <Input 
                       placeholder="Type your reply..." 
+                      className="flex-1"
                       value={replyMessage}
                       onChange={(e) => setReplyMessage(e.target.value)}
                       onKeyPress={(e) => {
