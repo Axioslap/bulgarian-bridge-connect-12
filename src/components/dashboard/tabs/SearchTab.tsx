@@ -93,23 +93,25 @@ const SearchTab = () => {
     setHasMore(filteredMembers.length > ITEMS_PER_PAGE);
   }, [filteredMembers, searchQuery, searchFilters]);
   const loadMoreMembers = useCallback(() => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    setTimeout(() => {
-      const nextPage = currentPage + 1;
-      const startIndex = nextPage * ITEMS_PER_PAGE;
-      const endIndex = startIndex + ITEMS_PER_PAGE;
-      const newMembers = filteredMembers.slice(startIndex, endIndex);
-      if (newMembers.length > 0) {
-        setDisplayedMembers(prev => [...prev, ...newMembers]);
-        setCurrentPage(nextPage);
-        setHasMore(startIndex + newMembers.length < filteredMembers.length);
-      } else {
-        setHasMore(false);
-      }
-      setLoadingMore(false);
-    }, 500);
-  }, [currentPage, filteredMembers, loadingMore, hasMore]);
+  if (loadingMore || !hasMore) return;
+  setLoadingMore(true);
+  setTimeout(() => {
+    const nextPage = currentPage + 1;
+    const startIndex = nextPage * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const newMembers = filteredMembers.slice(startIndex, endIndex);
+    
+    if (newMembers.length > 0) {
+      setDisplayedMembers(prev => [...prev, ...newMembers]);
+      setCurrentPage(nextPage);
+      // Fix: Check if there are more items beyond what we just loaded
+      setHasMore(endIndex < filteredMembers.length);
+    } else {
+      setHasMore(false);
+    }
+    setLoadingMore(false);
+  }, 500);
+}, [currentPage, filteredMembers, loadingMore, hasMore]);
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore && !loadingMore) {
