@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,23 +19,54 @@ const SearchTab = () => {
     location: "",
     interest: "",
     education: "",
-    businessInterest: "all"
+    jobTitle: "",
+    company: "",
+    membershipType: "all"
   });
   const [members, setMembers] = useState<any[]>([]);
+  const [displayedMembers, setDisplayedMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [messageSubject, setMessageSubject] = useState("");
   const [messageContent, setMessageContent] = useState("");
   const { user } = useMemberAuth();
   const { toast } = useToast();
+  const observerRef = useRef<HTMLDivElement>(null);
+  const ITEMS_PER_PAGE = 2;
 
   useEffect(() => {
     fetchMembers();
+    setupRealtimeSubscription();
+    
+    return () => {
+      supabase.removeAllChannels();
+    };
   }, []);
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          fetchMembers();
+        }
+      )
+      .subscribe();
+  };
 
   const fetchMembers = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -56,27 +87,90 @@ const SearchTab = () => {
     
     const matchesSearch = fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          member.job_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         member.company?.toLowerCase().includes(searchQuery.toLowerCase());
+                         member.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         member.email?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesLocation = !searchFilters.location || location.toLowerCase().includes(searchFilters.location.toLowerCase());
+    const matchesLocation = !searchFilters.location || 
+      location.toLowerCase().includes(searchFilters.location.toLowerCase()) ||
+      member.city?.toLowerCase().includes(searchFilters.location.toLowerCase()) ||
+      member.country?.toLowerCase().includes(searchFilters.location.toLowerCase());
+      
     const matchesInterest = !searchFilters.interest || 
       (member.areas_of_interest && member.areas_of_interest.some((interest: string) => 
         interest.toLowerCase().includes(searchFilters.interest.toLowerCase())
       ));
-    const matchesEducation = !searchFilters.education || member.university?.toLowerCase().includes(searchFilters.education.toLowerCase());
+      
+    const matchesEducation = !searchFilters.education || 
+      member.university?.toLowerCase().includes(searchFilters.education.toLowerCase());
+      
+    const matchesJobTitle = !searchFilters.jobTitle ||
+      member.job_title?.toLowerCase().includes(searchFilters.jobTitle.toLowerCase());
+      
+    const matchesCompany = !searchFilters.company ||
+      member.company?.toLowerCase().includes(searchFilters.company.toLowerCase());
+      
+    const matchesMembershipType = searchFilters.membershipType === "all" ||
+      member.membership_type === searchFilters.membershipType;
     
-    // Since businessInterest doesn't exist in profiles data, we'll skip this filter for now
-    const matchesBusinessInterest = searchFilters.businessInterest === "all";
-    
-    return matchesSearch && matchesLocation && matchesInterest && matchesEducation && matchesBusinessInterest;
+    return matchesSearch && matchesLocation && matchesInterest && 
+           matchesEducation && matchesJobTitle && matchesCompany && matchesMembershipType;
   });
 
+  useEffect(() => {
+    setCurrentPage(0);
+    setHasMore(true);
+    const initialMembers = filteredMembers.slice(0, ITEMS_PER_PAGE);
+    setDisplayedMembers(initialMembers);
+    setHasMore(filteredMembers.length > ITEMS_PER_PAGE);
+  }, [filteredMembers, searchQuery, searchFilters]);
+
+  const loadMoreMembers = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    setTimeout(() => {
+      const nextPage = currentPage + 1;
+      const startIndex = nextPage * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const newMembers = filteredMembers.slice(startIndex, endIndex);
+      
+      if (newMembers.length > 0) {
+        setDisplayedMembers(prev => [...prev, ...newMembers]);
+        setCurrentPage(nextPage);
+        setHasMore(endIndex < filteredMembers.length);
+      } else {
+        setHasMore(false);
+      }
+      setLoadingMore(false);
+    }, 500);
+  }, [currentPage, filteredMembers, loadingMore, hasMore]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadMoreMembers();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loadMoreMembers, hasMore, loadingMore]);
+
   const clearFilters = () => {
+    setSearchQuery("");
     setSearchFilters({
       location: "", 
       interest: "", 
-      education: "", 
-      businessInterest: "all"
+      education: "",
+      jobTitle: "",
+      company: "",
+      membershipType: "all"
     });
   };
 
@@ -154,7 +248,7 @@ const SearchTab = () => {
               className="w-full"
             />
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
               <Input
                 placeholder="Filter by location..."
                 value={searchFilters.location}
@@ -173,48 +267,66 @@ const SearchTab = () => {
                 onChange={(e) => setSearchFilters({...searchFilters, education: e.target.value})}
                 className="text-sm"
               />
+              <Input
+                placeholder="Filter by job title..."
+                value={searchFilters.jobTitle}
+                onChange={(e) => setSearchFilters({...searchFilters, jobTitle: e.target.value})}
+                className="text-sm"
+              />
+              <Input
+                placeholder="Filter by company..."
+                value={searchFilters.company}
+                onChange={(e) => setSearchFilters({...searchFilters, company: e.target.value})}
+                className="text-sm"
+              />
               <Select
-                value={searchFilters.businessInterest}
-                onValueChange={(value) => setSearchFilters({...searchFilters, businessInterest: value})}
+                value={searchFilters.membershipType}
+                onValueChange={(value) => setSearchFilters({...searchFilters, membershipType: value})}
               >
                 <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="Business Interest" />
+                  <SelectValue placeholder="Membership Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Interests</SelectItem>
-                  <SelectItem value="expand-existing">Want to Expand Company</SelectItem>
-                  <SelectItem value="start-company">Looking to Start Company</SelectItem>
-                  <SelectItem value="join-company">Looking to Join Company</SelectItem>
-                  <SelectItem value="other">Other Interests</SelectItem>
+                  <SelectItem value="all">All Members</SelectItem>
+                  <SelectItem value="free">Free Members</SelectItem>
+                  <SelectItem value="premium">Premium Members</SelectItem>
+                  <SelectItem value="student">Student Members</SelectItem>
                 </SelectContent>
               </Select>
-              <Button 
-                variant="outline" 
-                onClick={clearFilters}
-                className="text-sm w-full"
-                size="sm"
-              >
-                Clear Filters
-              </Button>
             </div>
+            <Button 
+              variant="outline" 
+              onClick={clearFilters}
+              className="text-sm w-full sm:w-auto"
+              size="sm"
+            >
+              Clear All Filters
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Members ({filteredMembers.length})</CardTitle>
+          <CardTitle className="text-base sm:text-lg">
+            Members ({filteredMembers.length}) 
+            {displayedMembers.length < filteredMembers.length && (
+              <span className="text-sm font-normal text-muted-foreground">
+                - Showing {displayedMembers.length}
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading members...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading members...</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredMembers.map((member) => (
-                <div key={member.id} className="p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+              {displayedMembers.map((member) => (
+                <div key={member.id} className="p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
                       <div className="flex-1 min-w-0">
@@ -229,17 +341,19 @@ const SearchTab = () => {
                             <h4 className="font-medium text-sm sm:text-base truncate">
                               {member.first_name} {member.last_name}
                             </h4>
-                            <Badge variant="outline" className="text-xs">Member</Badge>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {member.membership_type || 'Member'}
+                            </Badge>
                           </div>
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1">📍 {member.city}, {member.country}</p>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1">🎓 {member.university}</p>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-2">💼 {member.job_title} at {member.company}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-1">📍 {member.city}, {member.country}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-1">🎓 {member.university}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2">💼 {member.job_title} at {member.company}</p>
                         
                         {member.areas_of_interest && member.areas_of_interest.length > 0 && (
                           <div className="space-y-2">
                             <div>
-                              <span className="text-xs font-medium text-gray-500">Areas of Interest:</span>
+                              <span className="text-xs font-medium text-muted-foreground">Areas of Interest:</span>
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {member.areas_of_interest.map((interest: string, index: number) => (
                                   <Badge key={index} variant="secondary" className="text-xs">
@@ -268,9 +382,37 @@ const SearchTab = () => {
                   </div>
                 </div>
               ))}
+              
+              {/* Infinite scroll trigger */}
+              {hasMore && (
+                <div ref={observerRef} className="text-center py-4">
+                  {loadingMore ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      <span className="text-sm text-muted-foreground">Loading more members...</span>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={loadMoreMembers}
+                      className="text-sm"
+                    >
+                      Load More Members
+                    </Button>
+                  )}
+                </div>
+              )}
+              
               {filteredMembers.length === 0 && !loading && (
-                <div className="text-center py-8 text-gray-500 text-sm">
+                <div className="text-center py-8 text-muted-foreground text-sm">
                   No members found matching your search criteria.
+                </div>
+              )}
+              
+              {!hasMore && displayedMembers.length > 0 && (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  You've reached the end of the member list.
                 </div>
               )}
             </div>
