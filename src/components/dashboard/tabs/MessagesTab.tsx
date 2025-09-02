@@ -496,7 +496,16 @@ const MessagesTab = () => {
               )}
               <CardTitle className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5" />
-                {currentView === 'conversation' && selectedConversation ? selectedConversation.participantName : 'Messages'}
+                {currentView === 'conversation' && selectedConversation ? (
+                  <button 
+                    onClick={handleBackToList}
+                    className="hover:text-primary transition-colors cursor-pointer"
+                  >
+                    Messages
+                  </button>
+                ) : (
+                  'Messages'
+                )}
               </CardTitle>
             </div>
             {currentView === 'list' && (
