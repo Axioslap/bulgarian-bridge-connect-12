@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,8 +86,21 @@ const MessagesTab = () => {
   const [recipients, setRecipients] = useState<any[]>([]);
   const [selectedRecipient, setSelectedRecipient] = useState("");
   
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useMemberAuth();
   const { toast } = useToast();
+
+  // Scroll to bottom function
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    if (selectedConversation?.messages) {
+      setTimeout(scrollToBottom, 100);
+    }
+  }, [selectedConversation?.messages]);
 
   useEffect(() => {
     if (user) {
@@ -272,13 +285,6 @@ const MessagesTab = () => {
       );
     }
 
-    // Auto-scroll to the latest message after conversation loads
-    setTimeout(() => {
-      const messagesContainer = document.querySelector('.messages-container');
-      if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
-    }, 100);
   };
 
   const handleBackToList = () => {
@@ -385,14 +391,6 @@ const MessagesTab = () => {
       }
 
       setReplyMessage("");
-      
-      // Auto-scroll to the latest message after reply is sent
-      setTimeout(() => {
-        const messagesContainer = document.querySelector('.messages-container');
-        if (messagesContainer) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      }, 100);
     } catch (error) {
       console.error('Error sending reply:', error);
       toast({
@@ -824,6 +822,7 @@ const MessagesTab = () => {
                       </div>
                     );
                   })}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Message Input */}
