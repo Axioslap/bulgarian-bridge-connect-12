@@ -866,6 +866,16 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
+                  <div className="mt-2 flex justify-center">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleBackToList}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      See all messages
+                    </Button>
+                  </div>
                 </div>
               </div>
             )
