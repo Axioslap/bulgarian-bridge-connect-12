@@ -103,7 +103,7 @@ const SearchTab = () => {
       if (newMembers.length > 0) {
         setDisplayedMembers(prev => [...prev, ...newMembers]);
         setCurrentPage(nextPage);
-        setHasMore(endIndex < filteredMembers.length);
+        setHasMore(startIndex + newMembers.length < filteredMembers.length);
       } else {
         setHasMore(false);
       }
