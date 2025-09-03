@@ -492,22 +492,29 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     if (!user) return;
     
     try {
-      // Delete all messages between the current user and the conversation partner
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${conversationPartnerId}),and(sender_id.eq.${conversationPartnerId},recipient_id.eq.${user.id})`);
-
-      if (error) throw error;
-
-      // Also delete any tag assignments for this conversation
-      await supabase
+      // First delete conversation tag assignments
+      const { error: tagError } = await supabase
         .from('conversation_tag_assignments')
         .delete()
         .eq('user_id', user.id)
         .eq('conversation_partner_id', conversationPartnerId);
 
-      // Update local state by removing the conversation
+      if (tagError) {
+        console.error('Error deleting conversation tags:', tagError);
+      }
+
+      // Then delete all messages in both directions
+      const { error: messageError } = await supabase
+        .from('messages')
+        .delete()
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${conversationPartnerId}),and(sender_id.eq.${conversationPartnerId},recipient_id.eq.${user.id})`);
+
+      if (messageError) {
+        console.error('Error deleting messages:', messageError);
+        throw messageError;
+      }
+
+      // Remove conversation from local state
       setConversations(prev => prev.filter(conv => conv.participant_id !== conversationPartnerId));
       
       // If we were viewing this conversation, go back to list
@@ -515,15 +522,18 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
         handleBackToList();
       }
       
+      // Force refresh to ensure consistency
+      await fetchConversations();
+      
       toast({
         title: "Conversation deleted",
-        description: "The entire conversation has been deleted successfully.",
+        description: "The entire conversation has been deleted permanently.",
       });
     } catch (error) {
       console.error('Error deleting conversation:', error);
       toast({
         title: "Error",
-        description: "Failed to delete conversation.",
+        description: "Failed to delete conversation. Please try again.",
         variant: "destructive",
       });
     }
