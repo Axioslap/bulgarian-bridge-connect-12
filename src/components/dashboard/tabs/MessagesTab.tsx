@@ -488,6 +488,47 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     }
   };
 
+  const deleteConversation = async (conversationPartnerId: string) => {
+    if (!user) return;
+    
+    try {
+      // Delete all messages between the current user and the conversation partner
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${conversationPartnerId}),and(sender_id.eq.${conversationPartnerId},recipient_id.eq.${user.id})`);
+
+      if (error) throw error;
+
+      // Also delete any tag assignments for this conversation
+      await supabase
+        .from('conversation_tag_assignments')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('conversation_partner_id', conversationPartnerId);
+
+      // Update local state by removing the conversation
+      setConversations(prev => prev.filter(conv => conv.participant_id !== conversationPartnerId));
+      
+      // If we were viewing this conversation, go back to list
+      if (selectedConversation?.participant_id === conversationPartnerId) {
+        handleBackToList();
+      }
+      
+      toast({
+        title: "Conversation deleted",
+        description: "The entire conversation has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const deleteMessage = async (messageId: string) => {
     if (!user) return;
     
@@ -817,29 +858,42 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
                                     <MoreVertical className="w-3 h-3" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  {tags.map((tag) => (
-                                    <DropdownMenuItem
-                                      key={tag.id}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleConversationTag(conversation.participant_id, tag.id);
-                                      }}
-                                      className="flex items-center gap-2"
-                                    >
-                                      <div 
-                                        className="w-3 h-3 rounded-full"
-                                        style={{ backgroundColor: tag.color }}
-                                      />
-                                      {conversation.tags.some(t => t.id === tag.id) ? (
-                                        <X className="w-3 h-3" />
-                                      ) : (
-                                        <Plus className="w-3 h-3" />
-                                      )}
-                                      {tag.name}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
+                                 <DropdownMenuContent align="end">
+                                   {tags.map((tag) => (
+                                     <DropdownMenuItem
+                                       key={tag.id}
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleConversationTag(conversation.participant_id, tag.id);
+                                       }}
+                                       className="flex items-center gap-2"
+                                     >
+                                       <div 
+                                         className="w-3 h-3 rounded-full"
+                                         style={{ backgroundColor: tag.color }}
+                                       />
+                                       {conversation.tags.some(t => t.id === tag.id) ? (
+                                         <X className="w-3 h-3" />
+                                       ) : (
+                                         <Plus className="w-3 h-3" />
+                                       )}
+                                       {tag.name}
+                                     </DropdownMenuItem>
+                                   ))}
+                                   {tags.length > 0 && (
+                                     <div className="h-px bg-border my-1" />
+                                   )}
+                                   <DropdownMenuItem
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       deleteConversation(conversation.participant_id);
+                                     }}
+                                     className="flex items-center gap-2 text-destructive focus:text-destructive"
+                                   >
+                                     <Trash2 className="w-3 h-3" />
+                                     Delete Conversation
+                                   </DropdownMenuItem>
+                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
                           </div>
