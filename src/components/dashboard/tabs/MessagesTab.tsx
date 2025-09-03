@@ -28,7 +28,8 @@ import {
   Tag,
   MoreVertical,
   Hash,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
@@ -487,6 +488,78 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     }
   };
 
+  const deleteMessage = async (messageId: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user.id); // Only allow deleting own messages
+
+      if (error) throw error;
+
+      // Refresh conversations to reflect the deletion
+      fetchConversations();
+      
+      toast({
+        title: "Message deleted",
+        description: "The message has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteTag = async (tagId: string) => {
+    if (!user) return;
+    
+    try {
+      // First delete all tag assignments
+      await supabase
+        .from('conversation_tag_assignments')
+        .delete()
+        .eq('tag_id', tagId)
+        .eq('user_id', user.id);
+
+      // Then delete the tag
+      const { error } = await supabase
+        .from('conversation_tags')
+        .delete()
+        .eq('id', tagId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setTags(prev => prev.filter(tag => tag.id !== tagId));
+      if (selectedTag === tagId) {
+        setSelectedTag(null);
+      }
+      
+      // Refresh conversations to update tag assignments
+      fetchConversations();
+      
+      toast({
+        title: "Tag deleted",
+        description: "The tag has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting tag:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete tag.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredConversations = selectedTag
     ? conversations.filter(conv => 
         conv.tags.some(tag => tag.id === selectedTag)
@@ -602,22 +675,34 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
                   >
                     All
                   </Button>
-                  {tags.map((tag) => (
-                    <Button
-                      key={tag.id}
-                      variant={selectedTag === tag.id ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedTag(tag.id)}
-                      className="flex items-center gap-1"
-                      style={{ 
-                        backgroundColor: selectedTag === tag.id ? tag.color : undefined,
-                        borderColor: tag.color 
-                      }}
-                    >
-                      <Hash className="w-3 h-3" />
-                      {tag.name}
-                    </Button>
-                  ))}
+                   {tags.map((tag) => (
+                     <div key={tag.id} className="flex items-center gap-1">
+                       <Button
+                         variant={selectedTag === tag.id ? "default" : "outline"}
+                         size="sm"
+                         onClick={() => setSelectedTag(tag.id)}
+                         className="flex items-center gap-1"
+                         style={{ 
+                           backgroundColor: selectedTag === tag.id ? tag.color : undefined,
+                           borderColor: tag.color 
+                         }}
+                       >
+                         <Hash className="w-3 h-3" />
+                         {tag.name}
+                       </Button>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           deleteTag(tag.id);
+                         }}
+                         className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                       >
+                         <Trash2 className="w-3 h-3" />
+                       </Button>
+                     </div>
+                   ))}
                 </div>
                 <Dialog open={isNewTagOpen} onOpenChange={setIsNewTagOpen}>
                   <DialogTrigger asChild>
@@ -821,14 +906,29 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
                               </div>
                             )}
                             
-                            <div className={`p-3 rounded-lg ${
-                              isFromUser 
-                                ? 'bg-primary text-primary-foreground' 
-                                : 'bg-muted text-foreground'
-                            }`}>
-                              <div className="font-medium text-sm mb-1">{message.subject}</div>
-                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                            </div>
+                             <div className={`p-3 rounded-lg ${
+                               isFromUser 
+                                 ? 'bg-primary text-primary-foreground' 
+                                 : 'bg-muted text-foreground'
+                             }`}>
+                               <div className="flex items-center justify-between mb-1">
+                                 <div className="font-medium text-sm">{message.subject}</div>
+                                 {isFromUser && (
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       deleteMessage(message.id);
+                                     }}
+                                     className="h-6 w-6 p-0 text-primary-foreground/70 hover:text-destructive"
+                                   >
+                                     <Trash2 className="w-3 h-3" />
+                                   </Button>
+                                 )}
+                               </div>
+                               <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                             </div>
                             
                             {isFromUser && (
                               <div className="text-right mt-1">
