@@ -142,18 +142,19 @@ const ExpertsSection = () => {
 
                 <div className="text-center">
                   <p className="text-sm text-slate-600 mb-4">
-                    If you want to speak with me, become a Community Member
+                    Our membership is invitation-only. Contact us to learn more.
                   </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className={`hover:bg-blue-50 hover:border-blue-200 touch-manipulation ${
-                      isIPhone ? 'min-h-[44px] px-4' : ''
-                    }`}
-                    onClick={() => window.location.href = '/register'}
-                  >
-                    Join Community
-                  </Button>
+                  <a href="mailto:asen.ivanov@a2balliance.com">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={`hover:bg-blue-50 hover:border-blue-200 touch-manipulation ${
+                        isIPhone ? 'min-h-[44px] px-4' : ''
+                      }`}
+                    >
+                      Contact Us
+                    </Button>
+                  </a>
                 </div>
               </CardContent>
             </Card>
@@ -161,17 +162,18 @@ const ExpertsSection = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button
-            variant="outline"
-            className={`shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-medium border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-blue-600 group touch-manipulation ${
-              isIPhone 
-                ? 'px-6 py-3 text-base min-h-[48px]' 
-                : 'px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg'
-            }`}
-            onClick={() => window.location.href = '/register'}
-          >
-            Become an Expert
-          </Button>
+          <a href="mailto:asen.ivanov@a2balliance.com">
+            <Button
+              variant="outline"
+              className={`shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-medium border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-blue-600 group touch-manipulation ${
+                isIPhone 
+                  ? 'px-6 py-3 text-base min-h-[48px]' 
+                  : 'px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg'
+              }`}
+            >
+              Become an Expert
+            </Button>
+          </a>
         </div>
       </div>
     </section>

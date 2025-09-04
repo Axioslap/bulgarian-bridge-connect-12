@@ -83,12 +83,12 @@ const HeroSection = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link to="/register" className="w-full sm:w-auto">
+          <a href="mailto:asen.ivanov@a2balliance.com" className="w-full sm:w-auto">
             <Button size={isMobile ? "default" : "lg"} className={`bg-blue-800 hover:bg-blue-900 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group w-full sm:w-auto touch-manipulation ${isIPhone ? 'px-8 py-4 text-base min-h-[48px]' : 'px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg'}`}>
-              Join Our Community
+              Contact Us to Join
               <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-          </Link>
+          </a>
           <Link to="/about" className="w-full sm:w-auto">
             <Button variant="outline" size={isMobile ? "default" : "lg"} className={`shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold border-2 border-slate-300 hover:border-blue-600 hover:text-blue-700 w-full sm:w-auto touch-manipulation ${isIPhone ? 'px-6 py-4 text-base min-h-[48px]' : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg'}`}>
               Learn More

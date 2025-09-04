@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Lock } from "lucide-react";
+import { Lock, Mail, Phone } from "lucide-react";
 import NewsHero from "@/components/news/NewsHero";
 import ArticleCard from "@/components/news/ArticleCard";
 import PremiumContentSection from "@/components/news/PremiumContentSection";
@@ -102,7 +102,7 @@ const News = () => {
 
   const handleReadMore = (article: any) => {
     if (article.memberOnly && !isLoggedIn) {
-      window.location.href = '/register';
+      window.location.href = 'mailto:asen.ivanov@a2balliance.com';
     } else {
       window.location.href = `/news?article=${article.id}`;
     }
@@ -159,20 +159,22 @@ const News = () => {
               Member-Exclusive Content
             </DialogTitle>
             <DialogDescription>
-              Join ABTC Bulgaria to access our full collection of business and tech news, insights, and analysis.
+              Our membership is invitation-only. Get in touch with us to learn about membership opportunities.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 mt-4">
-            <Link to="/register" onClick={() => setShowMembershipModal(false)}>
+            <a href="mailto:asen.ivanov@a2balliance.com" onClick={() => setShowMembershipModal(false)}>
               <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90">
-                Become a Member
+                <Mail className="mr-2 h-4 w-4" />
+                Contact Us by Email
               </Button>
-            </Link>
-            <Link to="/register" onClick={() => setShowMembershipModal(false)}>
+            </a>
+            <a href="https://wa.me/359877032223" target="_blank" rel="noopener noreferrer" onClick={() => setShowMembershipModal(false)}>
               <Button variant="outline" className="w-full">
-                Support Our Community
+                <Phone className="mr-2 h-4 w-4" />
+                WhatsApp / Viber
               </Button>
-            </Link>
+            </a>
           </div>
         </DialogContent>
       </Dialog>

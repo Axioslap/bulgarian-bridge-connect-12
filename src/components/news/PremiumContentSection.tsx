@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Lock, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Lock, Star, Mail, Phone } from "lucide-react";
 import ArticleCard from "./ArticleCard";
 
 interface Article {
@@ -49,21 +48,22 @@ const PremiumContentSection = ({ articles, isLoggedIn, onReadMore }: PremiumCont
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Premium Articles Await</h3>
               <p className="text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
-                Get access to exclusive business insights, detailed market analysis, and insider perspectives 
-                on the U.S.-Bulgaria business corridor. Our premium content is crafted by industry experts.
+                Our membership is invitation-only. We're building an exclusive network of professionals. 
+                Get in touch with us to learn about membership opportunities.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/register">
+                <a href="mailto:asen.ivanov@a2balliance.com">
                   <Button size="lg" className="bg-gradient-to-r from-blue-600 to-red-600 hover:from-blue-700 hover:to-red-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
-                    <Star className="w-5 h-5 mr-2" />
-                    Become a Member
+                    <Mail className="w-5 h-5 mr-2" />
+                    Contact Us by Email
                   </Button>
-                </Link>
-                <Link to="/register">
+                </a>
+                <a href="https://wa.me/359877032223" target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" size="lg" className="border-blue-400 text-blue-700 hover:bg-blue-50">
-                    Learn More
+                    <Phone className="w-5 h-5 mr-2" />
+                    WhatsApp / Viber
                   </Button>
-                </Link>
+                </a>
               </div>
             </div>
           </div>
@@ -80,14 +80,22 @@ const PremiumContentSection = ({ articles, isLoggedIn, onReadMore }: PremiumCont
             <div className="bg-gradient-to-r from-blue-600 via-white to-red-600 p-8 rounded-2xl shadow-2xl">
               <h3 className="text-3xl font-bold text-gray-900 mb-4">Ready to Unlock Premium Content?</h3>
               <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-                Join our community of business leaders and get unlimited access to all premium articles
+                Our membership is invitation-only. Contact us to learn about joining our exclusive community.
               </p>
-              <Link to="/register">
-                <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 shadow-lg transform hover:scale-105 transition-all duration-200">
-                  <Star className="w-5 h-5 mr-2" />
-                  Become a Member to See Full Articles
-                </Button>
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="mailto:asen.ivanov@a2balliance.com">
+                  <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 shadow-lg transform hover:scale-105 transition-all duration-200">
+                    <Mail className="w-5 h-5 mr-2" />
+                    Contact Us by Email
+                  </Button>
+                </a>
+                <a href="tel:+359877032223">
+                  <Button variant="outline" size="lg" className="border-blue-400 text-blue-700 hover:bg-blue-50">
+                    <Phone className="w-5 h-5 mr-2" />
+                    Call +359 877 032223
+                  </Button>
+                </a>
+              </div>
             </div>
           </div>
         )}
