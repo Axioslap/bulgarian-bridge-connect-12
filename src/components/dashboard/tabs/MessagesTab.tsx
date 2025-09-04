@@ -507,7 +507,7 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
       const { error: messageError } = await supabase
         .from('messages')
         .delete()
-        .or(`sender_id.eq.${user.id}.and.recipient_id.eq.${conversationPartnerId},sender_id.eq.${conversationPartnerId}.and.recipient_id.eq.${user.id}`);
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${conversationPartnerId}),and(sender_id.eq.${conversationPartnerId},recipient_id.eq.${user.id})`);
 
       if (messageError) {
         console.error('Error deleting messages:', messageError);
