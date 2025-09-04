@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Mail, Phone } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const CTASection = () => {
@@ -39,43 +39,72 @@ const CTASection = () => {
             <h2 className={`font-bold text-white mb-6 sm:mb-8 drop-shadow-2xl leading-tight ${
               isIPhone ? 'text-3xl sm:text-4xl md:text-5xl' : 'text-3xl sm:text-4xl md:text-6xl'
             }`}>
-              Ready to Join Our <span className="bg-gradient-to-r from-blue-400 to-red-400 bg-clip-text text-transparent">Community</span>?
+              Interested in Joining Our <span className="bg-gradient-to-r from-blue-400 to-red-400 bg-clip-text text-transparent">Community</span>?
             </h2>
             <p className={`text-white/95 mb-4 sm:mb-6 max-w-4xl mx-auto leading-relaxed drop-shadow-lg ${
               isIPhone ? 'text-lg sm:text-xl md:text-2xl' : 'text-lg sm:text-xl md:text-2xl'
             }`}>
-              Become a member today and gain access to exclusive events, resources, and a network of professionals bridging the U.S. and Bulgaria.
+              Our membership is invitation-only. We're building an exclusive network of professionals bridging the U.S. and Bulgaria.
             </p>
             <p className={`text-white/90 mb-8 sm:mb-12 max-w-3xl mx-auto ${
               isIPhone ? 'text-base sm:text-lg' : 'text-base sm:text-lg'
             }`}>
-              Join over 500 professionals who are already building the future of US-Bulgaria business relations.
+              Get in touch with us to learn about membership opportunities and how you can be part of our growing community.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
-              <Link to="/register" className="w-full sm:w-auto">
-                <Button 
-                  size={isMobile ? "default" : "lg"} 
-                  className={`bg-white text-blue-800 hover:bg-slate-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group w-full sm:w-auto touch-manipulation ${
-                    isIPhone 
-                      ? 'px-8 py-4 text-base min-h-[48px]' 
-                      : 'px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg'
-                  }`}
-                >
-                  Join American Business & Technology Club
-                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+            
+            <div className="flex flex-col gap-6 max-w-2xl mx-auto mb-8">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="mailto:asen.ivanov@a2balliance.com" className="w-full sm:w-auto">
+                  <Button 
+                    size={isMobile ? "default" : "lg"} 
+                    className={`bg-white text-blue-800 hover:bg-slate-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group w-full sm:w-auto touch-manipulation ${
+                      isIPhone 
+                        ? 'px-8 py-4 text-base min-h-[48px]' 
+                        : 'px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg'
+                    }`}
+                  >
+                    <Mail className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    Contact Us by Email
+                  </Button>
+                </a>
+                
+                <a href="https://wa.me/359877032223" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                  <Button 
+                    variant="outline" 
+                    size={isMobile ? "default" : "lg"} 
+                    className={`border-2 border-white text-white hover:bg-white hover:text-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold w-full sm:w-auto touch-manipulation ${
+                      isIPhone 
+                        ? 'px-6 py-4 text-base min-h-[48px]' 
+                        : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg'
+                    }`}
+                  >
+                    <Phone className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    WhatsApp / Viber
+                  </Button>
+                </a>
+              </div>
+              
+              <div className="text-center">
+                <p className="text-white/80 text-sm mb-2">Or call us directly:</p>
+                <a href="tel:+359877032223" className="text-white font-semibold hover:text-blue-300 transition-colors">
+                  +359 877 032223
+                </a>
+              </div>
+            </div>
+            
+            <div className="flex justify-center">
               <Link to="/about" className="w-full sm:w-auto">
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   size={isMobile ? "default" : "lg"} 
-                  className={`border-2 border-white text-white hover:bg-white hover:text-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold w-full sm:w-auto touch-manipulation ${
+                  className={`text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 font-medium w-full sm:w-auto touch-manipulation ${
                     isIPhone 
-                      ? 'px-6 py-4 text-base min-h-[48px]' 
-                      : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg'
+                      ? 'px-6 py-3 text-sm min-h-[44px]' 
+                      : 'px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base'
                   }`}
                 >
                   Learn More About Us
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </div>
