@@ -30,7 +30,7 @@ const DiscussionTab = () => {
         .from('discussions')
         .select(`
           *,
-          profiles!inner(first_name, last_name)
+          profiles:user_id(first_name, last_name)
         `)
         .order('created_at', { ascending: false });
 
