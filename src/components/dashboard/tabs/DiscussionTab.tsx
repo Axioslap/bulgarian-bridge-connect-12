@@ -168,10 +168,12 @@ const DiscussionTab = () => {
                         content: post.content,
                         author: post.profiles ? `${post.profiles.first_name || ''} ${post.profiles.last_name || ''}`.trim() : 'Unknown User',
                         timeAgo: new Date(post.created_at).toLocaleDateString(),
-                        likes: post.likes_count,
-                        comments: post.comments_count,
+                        likes: post.likes_count || 0,
+                        comments: post.comments_count || 0,
                         tags: post.tags || []
-                      }} 
+                      }}
+                      onLike={() => fetchDiscussions()}
+                      onComment={() => fetchDiscussions()}
                     />
                   ))}
                 </div>
@@ -193,10 +195,12 @@ const DiscussionTab = () => {
                         content: post.content,
                         author: post.profiles ? `${post.profiles.first_name || ''} ${post.profiles.last_name || ''}`.trim() : 'Unknown User',
                         timeAgo: new Date(post.created_at).toLocaleDateString(),
-                        likes: post.likes_count,
-                        comments: post.comments_count,
+                        likes: post.likes_count || 0,
+                        comments: post.comments_count || 0,
                         tags: post.tags || []
-                      }} 
+                      }}
+                      onLike={() => fetchDiscussions()}
+                      onComment={() => fetchDiscussions()}
                     />
                   ))}
                 </div>
