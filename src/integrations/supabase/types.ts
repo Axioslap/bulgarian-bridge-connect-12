@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string | null
+          deleted_at: string | null
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_tag_assignments: {
         Row: {
           conversation_partner_id: string
@@ -283,6 +318,39 @@ export type Database = {
           subject?: string
           tags?: string[] | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string | null
+          deleted_at: string | null
+          id: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

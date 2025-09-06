@@ -1,4 +1,4 @@
-import { Home, Users, MessageCircle, Search, UserCheck, Calendar, Video, BookOpen, Heart, User as UserIcon } from "lucide-react";
+import { Home, Users, MessageCircle, Search, UserCheck, Calendar, Video, BookOpen, Heart, User as UserIcon, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -41,6 +41,7 @@ const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab, isInConversati
       label: "Communication",
       items: [
         { key: "discussion", label: "Discussion", Icon: Users },
+        { key: "posts", label: "Community Posts", Icon: FileText },
         { key: "messages", label: "Messages", Icon: MessageCircle, badge: unreadMessageCount },
       ],
     },

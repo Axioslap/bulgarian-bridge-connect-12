@@ -14,6 +14,8 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import MemberDashboard from "./pages/MemberDashboard";
 import AllPosts from "./pages/AllPosts";
+import CommunityPosts from "./pages/CommunityPosts";
+import PostDetail from "./pages/PostDetail";
 import Partners from "./pages/Partners";
 import PartnerDetail from "./pages/PartnerDetail";
 import BoardMember from "./pages/BoardMember";
@@ -48,6 +50,16 @@ const App = () => (
           <Route path="/all-posts" element={
             <ProtectedRoute>
               <AllPosts />
+            </ProtectedRoute>
+          } />
+          <Route path="/community-posts" element={
+            <ProtectedRoute>
+              <CommunityPosts />
+            </ProtectedRoute>
+          } />
+          <Route path="/community-posts/:postId" element={
+            <ProtectedRoute>
+              <PostDetail />
             </ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
