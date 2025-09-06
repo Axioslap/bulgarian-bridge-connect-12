@@ -144,12 +144,15 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     try {
       setLoading(true);
       
-      // Fetch messages first (exclude soft deleted)
+      // Fetch messages with receipts (exclude per-user deleted)
       const { data: messages, error: messagesError } = await supabase
         .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-        .is('deleted_at', null)
+        .select(`
+          *,
+          receipts:message_receipts!inner(user_id, deleted_at, read_at)
+        `)
+        .eq('receipts.user_id', user.id)
+        .is('receipts.deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (messagesError) throw messagesError;
@@ -325,6 +328,16 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
 
       if (error) throw error;
 
+      // Create receipts for both sender and recipient
+      const { error: receiptsError } = await supabase
+        .from('message_receipts')
+        .insert([
+          { message_id: data.id, user_id: user!.id, read_at: new Date().toISOString() },
+          { message_id: data.id, user_id: selectedRecipient }
+        ]);
+
+      if (receiptsError) throw receiptsError;
+
       setNewMessageContent("");
       setNewMessageSubject("");
       setSelectedRecipient("");
@@ -363,6 +376,16 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
         .single();
 
       if (error) throw error;
+
+      // Create receipts for both sender and recipient
+      const { error: receiptsError } = await supabase
+        .from('message_receipts')
+        .insert([
+          { message_id: data.id, user_id: user!.id, read_at: new Date().toISOString() },
+          { message_id: data.id, user_id: selectedConversation.participant_id }
+        ]);
+
+      if (receiptsError) throw receiptsError;
 
       // Fetch profile data for the new message
       const { data: profiles } = await supabase
@@ -493,19 +516,24 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     if (!user) return;
     
     try {
-      // Soft delete all messages in both directions
-      const { error: messageError } = await supabase
+      // Get all message IDs in this conversation
+      const { data: messages } = await supabase
         .from('messages')
-        .update({ 
-          deleted_at: new Date().toISOString(), 
-          deleted_by: user.id 
-        })
-        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${conversationPartnerId}),and(sender_id.eq.${conversationPartnerId},recipient_id.eq.${user.id})`)
-        .is('deleted_at', null);
+        .select('id')
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${conversationPartnerId}),and(sender_id.eq.${conversationPartnerId},recipient_id.eq.${user.id})`);
 
-      if (messageError) {
-        console.error('Error soft deleting messages:', messageError);
-        throw messageError;
+      if (messages && messages.length > 0) {
+        // Mark all user's receipts as deleted
+        const { error: receiptsError } = await supabase
+          .from('message_receipts')
+          .update({ deleted_at: new Date().toISOString() })
+          .in('message_id', messages.map(m => m.id))
+          .eq('user_id', user.id);
+
+        if (receiptsError) {
+          console.error('Error marking receipts as deleted:', receiptsError);
+          throw receiptsError;
+        }
       }
 
       // Remove conversation from local state
@@ -521,7 +549,7 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
       
       toast({
         title: "Conversation deleted",
-        description: "The conversation has been deleted.",
+        description: "The conversation has been deleted for you.",
       });
     } catch (error) {
       console.error('Error deleting conversation:', error);
@@ -538,14 +566,10 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     
     try {
       const { error } = await supabase
-        .from('messages')
-        .update({ 
-          deleted_at: new Date().toISOString(), 
-          deleted_by: user.id 
-        })
-        .eq('id', messageId)
-        .eq('sender_id', user.id) // Only allow deleting own messages
-        .is('deleted_at', null);
+        .from('message_receipts')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('message_id', messageId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -554,7 +578,7 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
       
       toast({
         title: "Message deleted",
-        description: "The message has been deleted.",
+        description: "The message has been deleted for you.",
       });
     } catch (error) {
       console.error('Error deleting message:', error);
