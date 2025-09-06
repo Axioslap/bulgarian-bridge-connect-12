@@ -248,6 +248,8 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           is_read: boolean | null
           recipient_id: string
@@ -259,6 +261,8 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           is_read?: boolean | null
           recipient_id: string
@@ -270,6 +274,8 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           is_read?: boolean | null
           recipient_id?: string

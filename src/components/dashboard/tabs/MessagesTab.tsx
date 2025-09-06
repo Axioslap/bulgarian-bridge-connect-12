@@ -144,11 +144,12 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     try {
       setLoading(true);
       
-      // Fetch messages first
+      // Fetch messages first (exclude soft deleted)
       const { data: messages, error: messagesError } = await supabase
         .from('messages')
         .select('*')
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (messagesError) throw messagesError;
@@ -492,25 +493,18 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     if (!user) return;
     
     try {
-      // First delete conversation tag assignments
-      const { error: tagError } = await supabase
-        .from('conversation_tag_assignments')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('conversation_partner_id', conversationPartnerId);
-
-      if (tagError) {
-        console.error('Error deleting conversation tags:', tagError);
-      }
-
-      // Then delete all messages in both directions
+      // Soft delete all messages in both directions
       const { error: messageError } = await supabase
         .from('messages')
-        .delete()
-        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${conversationPartnerId}),and(sender_id.eq.${conversationPartnerId},recipient_id.eq.${user.id})`);
+        .update({ 
+          deleted_at: new Date().toISOString(), 
+          deleted_by: user.id 
+        })
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${conversationPartnerId}),and(sender_id.eq.${conversationPartnerId},recipient_id.eq.${user.id})`)
+        .is('deleted_at', null);
 
       if (messageError) {
-        console.error('Error deleting messages:', messageError);
+        console.error('Error soft deleting messages:', messageError);
         throw messageError;
       }
 
@@ -527,7 +521,7 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
       
       toast({
         title: "Conversation deleted",
-        description: "The entire conversation has been deleted permanently.",
+        description: "The conversation has been deleted.",
       });
     } catch (error) {
       console.error('Error deleting conversation:', error);
@@ -545,9 +539,13 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     try {
       const { error } = await supabase
         .from('messages')
-        .delete()
+        .update({ 
+          deleted_at: new Date().toISOString(), 
+          deleted_by: user.id 
+        })
         .eq('id', messageId)
-        .eq('sender_id', user.id); // Only allow deleting own messages
+        .eq('sender_id', user.id) // Only allow deleting own messages
+        .is('deleted_at', null);
 
       if (error) throw error;
 
@@ -556,7 +554,7 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
       
       toast({
         title: "Message deleted",
-        description: "The message has been deleted successfully.",
+        description: "The message has been deleted.",
       });
     } catch (error) {
       console.error('Error deleting message:', error);
