@@ -326,7 +326,15 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to send message.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Create receipts for both sender and recipient
       const { error: receiptsError } = await supabase
@@ -375,7 +383,15 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending reply:', error);
+        toast({
+          title: "Error", 
+          description: error.message || "Failed to send reply.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Create receipts for both sender and recipient
       const { error: receiptsError } = await supabase
