@@ -57,14 +57,6 @@ const DashboardSidebar = ({ userProfile, activeTab, setActiveTab, unreadMessageC
           <div className="space-y-1">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2">Communication</h3>
             <Button
-              variant={activeTab === "discussion" ? "default" : "ghost"}
-              className={`w-full justify-start ${activeTab === "discussion" ? "bg-blue-600 hover:bg-blue-700 text-white" : "text-gray-700 hover:text-blue-700 hover:bg-blue-50"}`}
-              onClick={() => setActiveTab("discussion")}
-            >
-              <Users className="mr-2 h-4 w-4" />
-              Discussion
-            </Button>
-            <Button
               variant={activeTab === "messages" ? "default" : "ghost"}
               className={`w-full justify-start ${activeTab === "messages" ? "bg-blue-600 hover:bg-blue-700 text-white" : "text-gray-700 hover:text-blue-700 hover:bg-blue-50"}`}
               onClick={() => setActiveTab("messages")}

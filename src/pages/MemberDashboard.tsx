@@ -3,7 +3,7 @@ import { useState } from "react";
 import MemberDashboardHeader from "@/components/dashboard/MemberDashboardHeader";
 import MemberDashboardLayout from "@/components/dashboard/MemberDashboardLayout";
 import DashboardTab from "@/components/dashboard/tabs/DashboardTab";
-import DiscussionTab from "@/components/dashboard/tabs/DiscussionTab";
+
 import PostsTab from "@/components/dashboard/tabs/PostsTab";
 import MessagesTab from "@/components/dashboard/tabs/MessagesTab";
 import SearchTab from "@/components/dashboard/tabs/SearchTab";
@@ -52,8 +52,6 @@ const MemberDashboard = () => {
     switch (activeTab) {
       case "dashboard":
         return <DashboardTab userProfile={userProfile} onTabChange={setActiveTab} />;
-      case "discussion":
-        return <DiscussionTab />;
       case "posts":
         return <PostsTab />;
       case "messages":

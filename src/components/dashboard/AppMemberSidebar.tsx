@@ -40,7 +40,6 @@ const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab, isInConversati
     {
       label: "Communication",
       items: [
-        { key: "discussion", label: "Discussion", Icon: Users },
         { key: "posts", label: "Community Posts", Icon: FileText },
         { key: "messages", label: "Messages", Icon: MessageCircle, badge: unreadMessageCount },
       ],
