@@ -395,6 +395,7 @@ export type Database = {
           email: string
           first_name: string
           id: string
+          is_public: boolean | null
           job_title: string | null
           last_name: string
           linkedin_profile: string | null
@@ -418,6 +419,7 @@ export type Database = {
           email: string
           first_name: string
           id?: string
+          is_public?: boolean | null
           job_title?: string | null
           last_name: string
           linkedin_profile?: string | null
@@ -441,6 +443,7 @@ export type Database = {
           email?: string
           first_name?: string
           id?: string
+          is_public?: boolean | null
           job_title?: string | null
           last_name?: string
           linkedin_profile?: string | null
