@@ -332,7 +332,12 @@ const SearchTab = () => {
                       </div>
                       
                       <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-                        <Button size="sm" variant="outline" className="text-xs flex-1 sm:flex-none sm:w-24">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-xs flex-1 sm:flex-none sm:w-24"
+                          onClick={() => window.open(`/members/${member.id}`, '_blank')}
+                        >
                           View Profile
                         </Button>
                         <Button size="sm" className="text-xs flex-1 sm:flex-none sm:w-24" onClick={() => handleMessageClick(member)}>

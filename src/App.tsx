@@ -19,6 +19,7 @@ import PostDetail from "./pages/PostDetail";
 import Partners from "./pages/Partners";
 import PartnerDetail from "./pages/PartnerDetail";
 import BoardMember from "./pages/BoardMember";
+import MemberProfile from "./pages/MemberProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -47,6 +48,7 @@ const App = () => (
               <MemberDashboard />
             </ProtectedRoute>
           } />
+          <Route path="/members/:id" element={<MemberProfile />} />
           <Route path="/all-posts" element={
             <ProtectedRoute>
               <AllPosts />
