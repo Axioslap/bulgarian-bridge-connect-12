@@ -35,7 +35,7 @@ export default function ProfileModal({
       (async () => {
         const { data, error } = await supabase
           .rpc('get_profile_public', { _id: profileId })
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error('Profile fetch error:', error);
@@ -48,6 +48,18 @@ export default function ProfileModal({
           return;
         }
         
+        if (!data) {
+          console.error('No profile found for ID:', profileId);
+          toast({
+            title: "Profile not found",
+            description: "This profile may be private or doesn't exist",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Profile data loaded:', data);
         setProfile(data);
         setLoading(false);
       })();
@@ -60,7 +72,7 @@ export default function ProfileModal({
 
   if (!open) return null;
 
-  const fullName = profile ? `${profile.first_name} ${profile.last_name}` : "Profile";
+  const fullName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Profile" : "Profile";
 
   return (
     <div className="fixed inset-0 z-50">
