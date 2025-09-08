@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ProfileModal from "@/components/ProfileModal";
 const SearchTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilters, setSearchFilters] = useState({
@@ -33,8 +32,6 @@ const SearchTab = () => {
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [messageSubject, setMessageSubject] = useState("");
   const [messageContent, setMessageContent] = useState("");
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const { user } = useMemberAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -180,11 +177,6 @@ const SearchTab = () => {
     setMessageSubject("");
     setMessageContent("");
     setMessageDialogOpen(true);
-  };
-
-  const handleProfileClick = (member: any) => {
-    setSelectedProfile(member);
-    setProfileModalOpen(true);
   };
   const handleSendMessage = async () => {
     if (!user || !selectedMember) {
@@ -344,7 +336,7 @@ const SearchTab = () => {
                           size="sm" 
                           variant="outline" 
                           className="text-xs flex-1 sm:flex-none sm:w-24"
-                          onClick={() => handleProfileClick(member)}
+                          onClick={() => window.open(`/members/${member.id}`, '_blank')}
                         >
                           View Profile
                         </Button>
@@ -423,14 +415,6 @@ const SearchTab = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      <ProfileModal
-        open={profileModalOpen}
-        onClose={() => setProfileModalOpen(false)}
-        profileId={selectedProfile?.id || ""}
-        initial={selectedProfile}
-        onMessageClick={handleMessageClick}
-      />
     </div>;
 };
 export default SearchTab;
