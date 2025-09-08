@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { User, X, ExternalLink } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileModalProps {
   open: boolean;
@@ -23,26 +24,31 @@ export default function ProfileModal({
   const [profile, setProfile] = useState<any>(initial || null);
   const [loading, setLoading] = useState(!initial);
   const ref = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!open) return;
     
     // Fetch only if not provided
     if (!initial) {
+      console.log('Opening ProfileModal for:', profileId);
       (async () => {
         const { data, error } = await supabase
-          .from("profiles")
-          .select(`
-            id, first_name, last_name, email, 
-            profile_photo_url, job_title, company, 
-            city, country, university, areas_of_interest,
-            linkedin_profile, membership_type, created_at, user_id,
-            reason_for_joining, willing_to_mentor
-          `)
-          .eq("id", profileId)
+          .rpc('get_profile_public', { _id: profileId })
           .single();
         
-        if (!error) setProfile(data);
+        if (error) {
+          console.error('Profile fetch error:', error);
+          toast({
+            title: "Error loading profile",
+            description: error.message,
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+        
+        setProfile(data);
         setLoading(false);
       })();
     }
