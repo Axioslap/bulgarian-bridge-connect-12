@@ -34,15 +34,7 @@ export default function ProfileModal({
       console.log('Opening ProfileModal for:', profileId);
       (async () => {
         const { data, error } = await supabase
-          .from("profiles")
-          .select(`
-            id, first_name, last_name, email, 
-            profile_photo_url, job_title, company, 
-            city, country, university, areas_of_interest,
-            linkedin_profile, membership_type, created_at, user_id,
-            reason_for_joining, willing_to_mentor
-          `)
-          .eq("id", profileId)
+          .rpc('get_profile_public', { _id: profileId })
           .single();
         
         if (error) {
