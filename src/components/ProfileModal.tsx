@@ -29,41 +29,43 @@ export default function ProfileModal({
   useEffect(() => {
     if (!open) return;
     
-    // Fetch only if not provided
-    if (!initial) {
-      console.log('Opening ProfileModal for:', profileId);
-      (async () => {
-        const { data, error } = await supabase
-          .rpc('get_profile_public', { _id: profileId })
-          .maybeSingle();
+    // Always fetch from API to ensure complete data
+    console.log('Opening ProfileModal for:', profileId);
+    setLoading(true);
+    (async () => {
+      console.log('Calling get_profile_public with ID:', profileId);
+      const { data, error } = await supabase
+        .rpc('get_profile_public', { _id: profileId })
+        .maybeSingle();
+      
+      console.log('RPC Response - data:', data, 'error:', error);
         
-        if (error) {
-          console.error('Profile fetch error:', error);
-          toast({
-            title: "Error loading profile",
-            description: error.message,
-            variant: "destructive"
-          });
-          setLoading(false);
-          return;
-        }
-        
-        if (!data) {
-          console.error('No profile found for ID:', profileId);
-          toast({
-            title: "Profile not found",
-            description: "This profile may be private or doesn't exist",
-            variant: "destructive"
-          });
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Profile data loaded:', data);
-        setProfile(data);
+      if (error) {
+        console.error('Profile fetch error:', error);
+        toast({
+          title: "Error loading profile",
+          description: error.message,
+          variant: "destructive"
+        });
         setLoading(false);
-      })();
-    }
+        return;
+      }
+        
+      if (!data) {
+        console.error('No profile found for ID:', profileId);
+        toast({
+          title: "Profile not found",
+          description: "This profile may be private or doesn't exist",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+        
+      console.log('Profile data loaded:', data);
+      setProfile(data);
+      setLoading(false);
+    })();
 
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onEsc);

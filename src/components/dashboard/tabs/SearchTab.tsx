@@ -183,6 +183,7 @@ const SearchTab = () => {
   };
 
   const handleProfileClick = (member: any) => {
+    console.log('SearchTab - handleProfileClick called with member:', member);
     setSelectedProfile(member);
     setProfileModalOpen(true);
   };
