@@ -121,7 +121,9 @@ export default function ProfileModal({
                     {profile?.membership_type || 'Member'}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                {profile?.email && (
+                  <p className="text-sm text-muted-foreground">{profile.email}</p>
+                )}
                 <div className="space-y-1">
                   {profile?.job_title && (
                     <p className="text-sm font-medium">
