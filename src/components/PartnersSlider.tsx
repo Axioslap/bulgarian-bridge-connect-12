@@ -1,7 +1,10 @@
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
+import LazyImage from "@/components/common/LazyImage";
+import { useMemo } from "react";
 const PartnersSlider = () => {
-  const partners = [{
+  // Memoize partners data to prevent unnecessary re-renders
+  const partners = useMemo(() => [{
     id: 1,
     name: "TechCorp",
     logo: "/lovable-uploads/d1cb6ba8-a5b8-4971-a54d-ffa39ade484f.png",
@@ -31,7 +34,7 @@ const PartnersSlider = () => {
     name: "Digital Partners",
     logo: "/lovable-uploads/d1cb6ba8-a5b8-4971-a54d-ffa39ade484f.png",
     description: "Digital transformation experts"
-  }];
+  }], []);
   return (
     <section className="py-16 bg-gradient-to-r from-slate-50 to-white">
       <div className="container mx-auto px-4">
@@ -56,7 +59,7 @@ const PartnersSlider = () => {
               <CarouselItem key={partner.id} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
                 <Card className="h-full hover:shadow-lg transition-shadow duration-300">
                   <CardContent className="flex flex-col items-center justify-center p-6">
-                    <img
+                    <LazyImage
                       src={partner.logo}
                       alt={`${partner.name} logo`}
                       className="w-16 h-16 object-contain mb-4 grayscale hover:grayscale-0 transition-all duration-300"

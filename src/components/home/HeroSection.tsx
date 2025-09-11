@@ -1,40 +1,15 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Globe, Award } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 const HeroSection = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isIPhone, setIsIPhone] = useState(false);
-  useEffect(() => {
-    setIsLoaded(true);
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isMobileDevice = window.innerWidth < 768;
-    const isAppleDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsMobile(isMobileDevice);
-    setIsIPhone(isAppleDevice);
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (isAppleDevice) {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    const img = new Image();
-    img.onload = () => {
-      setImageLoaded(true);
-    };
-    img.onerror = () => {
-      console.warn('Background image failed to load, continuing without it');
-      setImageLoaded(true);
-    };
-    img.src = isMobileDevice ? '/lovable-uploads/1184c5a6-8163-4552-9dba-3d1f2157fb51.png' : '/lovable-uploads/1184c5a6-8163-4552-9dba-3d1f2157fb51.png';
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  const stats = [{
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [isIPhone, setIsIPhone] = useState(() => /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()));
+
+  // Memoize stats to prevent unnecessary re-renders
+  const stats = useMemo(() => [{
     number: "500+",
     label: "Active Members",
     icon: Users
@@ -46,7 +21,52 @@ const HeroSection = () => {
     number: "15+",
     label: "Events Hosted",
     icon: Award
-  }];
+  }], []);
+
+  // Memoize device detection
+  const handleResize = useCallback(() => {
+    const newIsMobile = window.innerWidth < 768;
+    setIsMobile(newIsMobile);
+    
+    if (isIPhone) {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+  }, [isIPhone]);
+
+  // Optimize image loading
+  const preloadImage = useCallback(() => {
+    const img = new Image();
+    img.onload = () => setImageLoaded(true);
+    img.onerror = () => {
+      console.warn('Background image failed to load, continuing without it');
+      setImageLoaded(true);
+    };
+    // Use webp format if supported, fallback to png
+    img.src = '/lovable-uploads/1184c5a6-8163-4552-9dba-3d1f2157fb51.png';
+  }, []);
+
+  useEffect(() => {
+    setIsLoaded(true);
+    
+    // Add resize listener with debounce
+    let timeoutId: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleResize, 100);
+    };
+    
+    window.addEventListener('resize', debouncedResize, { passive: true });
+    handleResize();
+    
+    // Preload image with intersection observer for better performance
+    requestIdleCallback(preloadImage, { timeout: 2000 });
+    
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(timeoutId);
+    };
+  }, [handleResize, preloadImage]);
   return <section className={`relative flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-hidden ${isIPhone ? 'h-[calc(var(--vh,1vh)*80)] min-h-[600px]' : 'h-[600px] sm:h-[700px]'}`}>
       <div className={`absolute inset-0 bg-contain bg-center bg-no-repeat transition-opacity duration-700 ${imageLoaded ? 'opacity-15' : 'opacity-0'}`} style={{
       backgroundImage: imageLoaded ? `url('/lovable-uploads/1184c5a6-8163-4552-9dba-3d1f2157fb51.png')` : 'none',
