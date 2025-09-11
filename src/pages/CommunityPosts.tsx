@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageSquare, User } from 'lucide-react';
+import { ArrowLeft, MessageSquare, User, Trash2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -114,6 +114,38 @@ const CommunityPosts = () => {
     navigate(`/community-posts/${postId}`);
   };
 
+  const handleDeletePost = async (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete
+    
+    if (!window.confirm('Are you sure you want to delete this post?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      // Remove post from local state
+      setPosts(prev => prev.filter(post => post.id !== postId));
+      
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -214,9 +246,21 @@ const CommunityPosts = () => {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-xl">{post.title}</CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MessageSquare className="h-4 w-4" />
-                        {post.comments?.[0]?.count || 0}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MessageSquare className="h-4 w-4" />
+                          {post.comments?.[0]?.count || 0}
+                        </div>
+                        {user && post.author_id === user.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDeletePost(post.id, e)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>

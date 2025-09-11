@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, Calendar, MessageSquare } from 'lucide-react';
+import { ArrowLeft, User, Calendar, MessageSquare, Trash2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -169,6 +169,35 @@ const PostDetail = () => {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted successfully.",
+      });
+
+      navigate('/community-posts');
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -215,16 +244,31 @@ const PostDetail = () => {
           {/* Post Card */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="text-2xl">{post.title}</CardTitle>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  {postAuthor ? `${postAuthor.first_name} ${postAuthor.last_name}` : 'Anonymous'}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-2xl">{post.title}</CardTitle>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {postAuthor ? `${postAuthor.first_name} ${postAuthor.last_name}` : 'Anonymous'}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(post.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {new Date(post.created_at).toLocaleDateString()}
-                </div>
+                {user && post.author_id === user.id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeletePost}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Post
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
