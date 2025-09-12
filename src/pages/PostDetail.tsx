@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, Calendar, MessageSquare, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Calendar, MessageSquare, Trash2, Edit } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import EditPostDialog from '@/components/EditPostDialog';
 
 interface Post {
   id: string;
@@ -50,6 +51,7 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
     if (postId) {
@@ -198,6 +200,10 @@ const PostDetail = () => {
     }
   };
 
+  const handlePostUpdated = (updatedPost: Post) => {
+    setPost(updatedPost);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -259,15 +265,26 @@ const PostDetail = () => {
                   </div>
                 </div>
                 {user && post.author_id === user.id && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDeletePost}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Post
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditDialogOpen(true)}
+                      className="text-primary hover:text-primary hover:bg-primary/10"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Post
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeletePost}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Post
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardHeader>
@@ -347,6 +364,15 @@ const PostDetail = () => {
         </div>
       </main>
       <Footer />
+      
+      {post && (
+        <EditPostDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          post={post}
+          onPostUpdated={handlePostUpdated}
+        />
+      )}
     </div>
   );
 };
