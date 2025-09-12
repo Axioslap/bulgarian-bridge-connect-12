@@ -485,6 +485,13 @@ export type Database = {
           willing_to_mentor: string
         }[]
       }
+      soft_delete_post: {
+        Args: { p_post_id: string }
+        Returns: {
+          deleted_at: string
+          id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
