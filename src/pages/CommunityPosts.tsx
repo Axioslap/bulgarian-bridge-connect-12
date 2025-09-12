@@ -138,7 +138,7 @@ const CommunityPosts = () => {
       console.error('Error deleting post:', error);
       toast({
         title: "Error",
-        description: "Failed to delete post",
+        description: `Failed to delete post: ${(error as any)?.message || 'Unexpected error'}`,
         variant: "destructive",
       });
     }
