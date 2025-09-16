@@ -13,6 +13,7 @@ import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ProfileModal from "@/components/ProfileModal";
+import { validateTextInput } from "@/utils/security";
 const SearchTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilters, setSearchFilters] = useState({
@@ -71,31 +72,26 @@ const SearchTab = () => {
   };
 
   const buildQuery = () => {
+    // SECURITY FIX: Only select safe, non-sensitive fields for public search
+    // Sensitive data like email, full address, LinkedIn etc. are now protected
     let query = supabase
       .from('profiles')
-      .select('id,first_name,last_name,email,city,country,university,job_title,company,areas_of_interest,membership_type,profile_photo_url,user_id,created_at', { count: 'exact' })
+      .select('id,first_name,areas_of_interest,membership_type,profile_photo_url,user_id,created_at,willing_to_mentor', { count: 'exact' })
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false });
 
-    // Apply filters
+    // Apply filters - updated to use only safe fields
     if (searchQuery) {
-      query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,job_title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+      query = query.or(`first_name.ilike.%${searchQuery}%`);
     }
-    if (searchFilters.location) {
-      query = query.or(`city.ilike.%${searchFilters.location}%,country.ilike.%${searchFilters.location}%`);
-    }
-    if (searchFilters.education) {
-      query = query.ilike('university', `%${searchFilters.education}%`);
-    }
-    if (searchFilters.jobTitle) {
-      query = query.ilike('job_title', `%${searchFilters.jobTitle}%`);
-    }
-    if (searchFilters.company) {
-      query = query.ilike('company', `%${searchFilters.company}%`);
-    }
+    // Location, education, job title, company filtering removed for security
+    // These fields are now only visible through the secure get_profile_public function
     if (searchFilters.membershipType !== "all") {
       query = query.eq('membership_type', searchFilters.membershipType);
+    }
+    if (searchFilters.interest) {
+      query = query.contains('areas_of_interest', [searchFilters.interest]);
     }
 
     return query;
@@ -196,10 +192,15 @@ const SearchTab = () => {
       });
       return;
     }
-    if (!messageSubject.trim() || !messageContent.trim()) {
+
+    // Validate and sanitize inputs
+    const { isValid: subjectValid, sanitized: sanitizedSubject } = validateTextInput(messageSubject, 200);
+    const { isValid: contentValid, sanitized: sanitizedContent } = validateTextInput(messageContent, 2000);
+    
+    if (!subjectValid || !contentValid) {
       toast({
         title: "Validation Error",
-        description: "Please fill in both subject and message content.",
+        description: "Please fill in both subject and message content. Subject max 200 chars, message max 2000 chars.",
         variant: "destructive"
       });
       return;
@@ -210,13 +211,13 @@ const SearchTab = () => {
       } = await supabase.from('messages').insert({
         sender_id: user.id,
         recipient_id: selectedMember.user_id,
-        subject: messageSubject,
-        content: messageContent
+        subject: sanitizedSubject,
+        content: sanitizedContent
       });
       if (error) throw error;
       toast({
         title: "Message sent successfully!",
-        description: `Your message has been sent to ${selectedMember.first_name} ${selectedMember.last_name}.`
+        description: `Your message has been sent to ${selectedMember.first_name}.`
       });
       setMessageDialogOpen(false);
       setSelectedMember(null);
@@ -242,27 +243,13 @@ const SearchTab = () => {
           <div className="space-y-4">
             <Input placeholder="Search by name, job title, or company..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full" />
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-              <Input placeholder="Filter by location..." value={searchFilters.location} onChange={e => setSearchFilters({
-              ...searchFilters,
-              location: e.target.value
-            })} className="text-sm" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <Input placeholder="Filter by interest..." value={searchFilters.interest} onChange={e => setSearchFilters({
               ...searchFilters,
               interest: e.target.value
             })} className="text-sm" />
-              <Input placeholder="Filter by education..." value={searchFilters.education} onChange={e => setSearchFilters({
-              ...searchFilters,
-              education: e.target.value
-            })} className="text-sm" />
-              <Input placeholder="Filter by job title..." value={searchFilters.jobTitle} onChange={e => setSearchFilters({
-              ...searchFilters,
-              jobTitle: e.target.value
-            })} className="text-sm" />
-              <Input placeholder="Filter by company..." value={searchFilters.company} onChange={e => setSearchFilters({
-              ...searchFilters,
-              company: e.target.value
-            })} className="text-sm" />
+              {/* SECURITY FIX: Removed location, education, job title, and company filters 
+                  as these fields are no longer publicly searchable */}
               <Select value={searchFilters.membershipType} onValueChange={value => setSearchFilters({
               ...searchFilters,
               membershipType: value
@@ -313,16 +300,17 @@ const SearchTab = () => {
                           </Avatar>
                           <div className="flex flex-wrap items-center gap-2">
                             <h4 className="font-medium text-sm sm:text-base truncate">
-                              {member.first_name} {member.last_name}
+                              {member.first_name}
                             </h4>
                             <Badge variant="outline" className="text-xs capitalize">
                               {member.membership_type || 'Member'}
                             </Badge>
                           </div>
                         </div>
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-1">📍 {member.city}, {member.country}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-1">🎓 {member.university}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-2">💼 {member.job_title} at {member.company}</p>
+                        {/* SECURITY FIX: Removed sensitive location, education, and job info from public display */}
+                        {member.willing_to_mentor === 'yes' && (
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-1">🎯 Available for mentoring</p>
+                        )}
                         
                         {member.areas_of_interest && member.areas_of_interest.length > 0 && (
                           <div className="space-y-2">
@@ -401,17 +389,28 @@ const SearchTab = () => {
           <DialogHeader>
             <DialogTitle>Send Message</DialogTitle>
             <DialogDescription>
-              Send a message to {selectedMember?.first_name} {selectedMember?.last_name}
+              Send a message to {selectedMember?.first_name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Subject</label>
-              <Input placeholder="Message subject..." value={messageSubject} onChange={e => setMessageSubject(e.target.value)} />
+              <Input 
+                placeholder="Message subject..." 
+                value={messageSubject} 
+                onChange={e => setMessageSubject(e.target.value)}
+                maxLength={200}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Message</label>
-              <Textarea placeholder="Type your message here..." value={messageContent} onChange={e => setMessageContent(e.target.value)} rows={4} />
+              <Textarea 
+                placeholder="Type your message here..." 
+                value={messageContent} 
+                onChange={e => setMessageContent(e.target.value)} 
+                rows={4}
+                maxLength={2000}
+              />
             </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setMessageDialogOpen(false)}>
