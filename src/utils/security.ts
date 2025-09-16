@@ -34,26 +34,10 @@ export const validateTextInput = (input: string, maxLength: number = 1000): { is
   return { isValid, sanitized };
 };
 
-export const isValidAuthToken = (token: string): boolean => {
-  try {
-    const tokenData = JSON.parse(atob(token));
-    return tokenData.exp > Date.now();
-  } catch {
-    return false;
-  }
-};
-
-export const validateToken = (token: string): any => {
-  try {
-    const tokenData = JSON.parse(atob(token));
-    if (tokenData.exp < Date.now()) {
-      return null;
-    }
-    return tokenData;
-  } catch {
-    return null;
-  }
-};
+// REMOVED: Insecure manual JWT validation functions
+// These functions contained security vulnerabilities and are not needed
+// when using Supabase's built-in authentication system
+// Use supabase.auth.getUser() and supabase.auth.getSession() instead
 
 export const generateCSRFToken = (): string => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
