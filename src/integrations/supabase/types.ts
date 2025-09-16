@@ -463,6 +463,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_discussion_author_safe: {
+        Args: { discussion_user_id: string }
+        Returns: {
+          author_id: string
+          author_name: string
+          is_mentor: boolean
+        }[]
+      }
       get_profile_public: {
         Args: { _id: string }
         Returns: {

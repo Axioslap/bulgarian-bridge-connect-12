@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import SkillSelector from "@/components/SkillSelector";
 import { Camera, MapPin, X } from "lucide-react";
 import { useState } from "react";
+import { validateTextInput } from "@/utils/security";
 
 interface ProfileTabProps {
   userProfile: {
@@ -38,8 +39,10 @@ const ProfileTab = ({ userProfile, userSkills, setUserSkills }: ProfileTabProps)
   };
 
   const addInterest = () => {
-    if (newInterest.trim() && !interests.includes(newInterest.trim())) {
-      setInterests([...interests, newInterest.trim()]);
+    // Validate and sanitize interest input
+    const { isValid, sanitized } = validateTextInput(newInterest, 50);
+    if (isValid && !interests.includes(sanitized) && interests.length < 10) {
+      setInterests([...interests, sanitized]);
       setNewInterest("");
     }
   };
@@ -105,6 +108,7 @@ const ProfileTab = ({ userProfile, userSkills, setUserSkills }: ProfileTabProps)
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="City, State"
+            maxLength={100}
           />
         </div>
 
@@ -153,6 +157,7 @@ const ProfileTab = ({ userProfile, userSkills, setUserSkills }: ProfileTabProps)
                 onKeyPress={handleKeyPress}
                 placeholder="Add an interest..."
                 className="flex-1"
+                maxLength={50}
               />
               <Button onClick={addInterest} size="sm">Add</Button>
             </div>

@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { useToast } from "@/hooks/use-toast";
+import { validateTextInput } from "@/utils/security";
 
 interface Comment {
   id: string;
@@ -169,10 +170,12 @@ const DiscussionPost = ({ post, onLike, onComment, showComments = false }: Discu
       return;
     }
 
-    if (!newComment.trim()) {
+    // Validate and sanitize comment input
+    const { isValid, sanitized } = validateTextInput(newComment, 1000);
+    if (!isValid) {
       toast({
         title: "Validation Error",
-        description: "Comment cannot be empty.",
+        description: "Comment cannot be empty or exceed 1000 characters.",
         variant: "destructive",
       });
       return;
@@ -185,7 +188,7 @@ const DiscussionPost = ({ post, onLike, onComment, showComments = false }: Discu
         .insert({
           discussion_id: post.id,
           user_id: user.id,
-          content: newComment.trim()
+          content: sanitized
         });
 
       if (error) throw error;
@@ -293,6 +296,7 @@ const DiscussionPost = ({ post, onLike, onComment, showComments = false }: Discu
                     onChange={(e) => setNewComment(e.target.value)}
                     rows={2}
                     className="min-h-[60px]"
+                    maxLength={1000}
                   />
                   <div className="flex justify-end">
                     <Button
