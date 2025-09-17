@@ -11,6 +11,7 @@ const Index = lazy(() => import("./pages/Index"));
 const About = lazy(() => import("./pages/About"));
 const Experts = lazy(() => import("./pages/Experts"));
 const ExpertRegistration = lazy(() => import("./pages/ExpertRegistration"));
+const BecomeExpert = lazy(() => import("./pages/BecomeExpert"));
 const Events = lazy(() => import("./pages/Events"));
 const News = lazy(() => import("./pages/News"));
 const Login = lazy(() => import("./pages/Login"));
@@ -65,7 +66,8 @@ const App = () => (
             <Route path="/partners" element={<Partners />} />
             <Route path="/partners/:id" element={<PartnerDetail />} />
             <Route path="/experts" element={<Experts />} />
-            <Route path="/expert-registration" element={<ExpertRegistration />} />
+        <Route path="/expert-registration" element={<ExpertRegistration />} />
+        <Route path="/become-expert" element={<BecomeExpert />} />
             <Route path="/events" element={<Events />} />
             <Route path="/news" element={<News />} />
             <Route path="/login" element={<Login />} />
