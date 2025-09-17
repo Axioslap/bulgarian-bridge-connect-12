@@ -279,6 +279,66 @@ export type Database = {
         }
         Relationships: []
       }
+      experts: {
+        Row: {
+          bio: string
+          company: string
+          consultations_count: number | null
+          created_at: string
+          email: string
+          expertise: string[]
+          id: string
+          is_active: boolean | null
+          is_approved: boolean | null
+          linkedin_profile: string | null
+          location: string
+          name: string
+          profile_image_url: string | null
+          rating: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio: string
+          company: string
+          consultations_count?: number | null
+          created_at?: string
+          email: string
+          expertise?: string[]
+          id?: string
+          is_active?: boolean | null
+          is_approved?: boolean | null
+          linkedin_profile?: string | null
+          location: string
+          name: string
+          profile_image_url?: string | null
+          rating?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string
+          company?: string
+          consultations_count?: number | null
+          created_at?: string
+          email?: string
+          expertise?: string[]
+          id?: string
+          is_active?: boolean | null
+          is_approved?: boolean | null
+          linkedin_profile?: string | null
+          location?: string
+          name?: string
+          profile_image_url?: string | null
+          rating?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_receipts: {
         Row: {
           deleted_at: string | null

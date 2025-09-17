@@ -2,56 +2,60 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Mail, Linkedin, MapPin, Search } from "lucide-react";
-import { useState } from "react";
+import { Mail, Linkedin, MapPin, Search, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+
+interface Expert {
+  id: string;
+  name: string;
+  title: string;
+  company: string;
+  location: string;
+  expertise: string[];
+  bio: string;
+  email: string;
+  linkedin_profile?: string;
+  profile_image_url?: string;
+  rating: number;
+  consultations_count: number;
+}
 
 const ExpertsTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [experts, setExperts] = useState<Expert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const experts = [
-    {
-      id: 1,
-      name: "Dr. Sarah Johnson",
-      title: "Technology Innovation Consultant",
-      company: "TechBridge Solutions",
-      location: "Sofia, Bulgaria",
-      expertise: ["Digital Transformation", "AI Strategy", "Startup Mentoring"],
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612b000?w=400&h=400&fit=crop&crop=face",
-      description: "Former Silicon Valley executive with 15+ years helping Bulgarian companies scale internationally.",
-      email: "sarah.johnson@techbridge.bg",
-      linkedin: "sarah-johnson-tech",
-      rating: 4.9,
-      consultations: 127
-    },
-    {
-      id: 2,
-      name: "Michael Chen",
-      title: "Business Development Director",
-      company: "US-Bulgaria Trade Council",
-      location: "Boston, MA",
-      expertise: ["Market Entry", "Partnership Strategy", "Cross-border Investments"],
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
-      description: "Specializes in helping Bulgarian companies enter US markets and establish strategic partnerships.",
-      email: "m.chen@ustrade.org",
-      linkedin: "michael-chen-trade",
-      rating: 4.8,
-      consultations: 89
-    },
-    {
-      id: 3,
-      name: "Elena Petrov",
-      title: "Financial Advisory Partner",
-      company: "Atlantic Capital Partners",
-      location: "New York, NY",
-      expertise: ["Venture Capital", "Financial Planning", "IPO Preparation"],
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
-      description: "Expert in securing funding for tech startups and established companies looking to expand.",
-      email: "elena.petrov@atlanticcap.com",
-      linkedin: "elena-petrov-finance",
-      rating: 4.9,
-      consultations: 156
+  useEffect(() => {
+    fetchExperts();
+  }, []);
+
+  const fetchExperts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('experts')
+        .select('*')
+        .eq('is_approved', true)
+        .eq('is_active', true)
+        .order('rating', { ascending: false });
+
+      if (error) throw error;
+      setExperts(data || []);
+    } catch (error) {
+      console.error('Error fetching experts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load experts. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const filteredExperts = experts.filter(expert =>
     expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,8 +67,12 @@ const ExpertsTab = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Find an Expert</h1>
-        <Button variant="outline">
+        <Button 
+          variant="outline"
+          onClick={() => navigate('/expert-registration')}
+        >
           Become an Expert
+          <ExternalLink className="w-4 h-4 ml-2" />
         </Button>
       </div>
       
@@ -78,15 +86,33 @@ const ExpertsTab = () => {
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {filteredExperts.map((expert) => (
+      {loading ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
+          {filteredExperts.map((expert) => (
           <Card key={expert.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md bg-white">
             <CardContent className="p-6">
               <div className="flex items-start space-x-4">
                 <div className="relative flex-shrink-0">
                   <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-gray-200">
                     <img
-                      src={expert.image}
+                      src={expert.profile_image_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face"}
                       alt={expert.name}
                       className="w-full h-full object-cover"
                     />
@@ -102,8 +128,8 @@ const ExpertsTab = () => {
                       <p className="text-gray-500 text-sm">{expert.company}</p>
                     </div>
                     <div className="text-right text-sm">
-                      <div className="text-yellow-500 font-medium">★ {expert.rating}</div>
-                      <div className="text-gray-500">{expert.consultations} sessions</div>
+                      <div className="text-yellow-500 font-medium">★ {expert.rating.toFixed(1)}</div>
+                      <div className="text-gray-500">{expert.consultations_count} sessions</div>
                     </div>
                   </div>
                   
@@ -113,7 +139,7 @@ const ExpertsTab = () => {
                   </div>
                   
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {expert.description}
+                    {expert.bio}
                   </p>
                   
                   <div className="mb-4">
@@ -140,20 +166,23 @@ const ExpertsTab = () => {
                       <Mail className="w-4 h-4 mr-1" />
                       Contact
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(`https://linkedin.com/in/${expert.linkedin}`, '_blank')}
-                    >
-                      <Linkedin className="w-4 h-4" />
-                    </Button>
+                    {expert.linkedin_profile && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(`https://linkedin.com/in/${expert.linkedin_profile}`, '_blank')}
+                      >
+                        <Linkedin className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {filteredExperts.length === 0 && (
         <div className="text-center py-12">
