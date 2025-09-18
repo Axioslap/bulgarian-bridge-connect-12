@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DiscussionPost from "@/components/DiscussionPost";
 import { upcomingEvents, resourceLinks, mockCuratedNews, mockDiscussionPosts } from "@/data/mockData";
-import { ExternalLink, Calendar, MessageSquare, Heart, Share2, TrendingUp, Clock } from "lucide-react";
+import { ExternalLink, Calendar, MessageSquare, Heart, Share2, TrendingUp, Clock, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
+import AdminPanel from "@/components/admin/AdminPanel";
 interface DashboardTabProps {
   userProfile: {
     name: string;
@@ -23,10 +26,22 @@ const DashboardTab = ({
   userProfile,
   onTabChange
 }: DashboardTabProps) => {
+  const { canAccessAdminPanel } = useAuth();
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  useEffect(() => {
+    const checkAdminAccess = async () => {
+      const hasAccess = await canAccessAdminPanel();
+      setShowAdminPanel(hasAccess);
+    };
+    checkAdminAccess();
+  }, [canAccessAdminPanel]);
+
   const handlePostClick = (postId: number) => {
     console.log(`Clicked on post ${postId}`);
     // Navigate to post detail or expand post
   };
+  
   const handleQuickAction = (action: string) => {
     if (onTabChange) {
       onTabChange(action);
@@ -43,6 +58,24 @@ const DashboardTab = ({
 
       {/* Quick Actions */}
       <QuickActions onActionClick={handleQuickAction} />
+
+      {/* Admin Panel - Only visible to admins and superadmins */}
+      {showAdminPanel && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-red-600" />
+              Administration
+            </CardTitle>
+            <CardDescription>
+              Platform management and user administration
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdminPanel />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Activity Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
