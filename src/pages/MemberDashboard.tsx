@@ -7,6 +7,7 @@ import DashboardTab from "@/components/dashboard/tabs/DashboardTab";
 import PostsTab from "@/components/dashboard/tabs/PostsTab";
 import MessagesTab from "@/components/dashboard/tabs/MessagesTab";
 import SearchTab from "@/components/dashboard/tabs/SearchTab";
+import MapTab from "@/components/dashboard/tabs/MapTab";
 import ProfileTab from "@/components/dashboard/tabs/ProfileTab";
 import EventsTab from "@/components/dashboard/tabs/EventsTab";
 import ResourcesTab from "@/components/dashboard/tabs/ResourcesTab";
@@ -61,6 +62,8 @@ const MemberDashboard = () => {
         />;
       case "search":
         return <SearchTab />;
+      case "map":
+        return <MapTab />;
       case "profile":
         return <ProfileTab userProfile={userProfile} userSkills={userSkills} setUserSkills={setUserSkills} />;
       case "events":

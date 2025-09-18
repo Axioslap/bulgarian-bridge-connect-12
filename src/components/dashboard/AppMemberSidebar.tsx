@@ -1,4 +1,4 @@
-import { Home, Users, MessageCircle, Search, UserCheck, Calendar, Video, BookOpen, Heart, User as UserIcon, FileText } from "lucide-react";
+import { Home, Users, MessageCircle, Search, MapPin, UserCheck, Calendar, Video, BookOpen, Heart, User as UserIcon, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -48,6 +48,7 @@ const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab, isInConversati
       label: "Networking",
       items: [
         { key: "search", label: "Find Members", Icon: Search },
+        { key: "map", label: "Members Map", Icon: MapPin },
         { key: "experts", label: "Find Experts", Icon: UserCheck },
         { key: "events", label: "Events", Icon: Calendar },
       ],
