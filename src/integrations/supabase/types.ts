@@ -458,11 +458,14 @@ export type Database = {
           is_public: boolean | null
           job_title: string | null
           last_name: string
+          lat: number | null
           linkedin_profile: string | null
+          lng: number | null
           membership_type: string
           profile_photo_url: string | null
           reason_for_joining: string
           referral_member: string | null
+          state: string | null
           university: string
           updated_at: string
           user_id: string
@@ -482,11 +485,14 @@ export type Database = {
           is_public?: boolean | null
           job_title?: string | null
           last_name: string
+          lat?: number | null
           linkedin_profile?: string | null
+          lng?: number | null
           membership_type: string
           profile_photo_url?: string | null
           reason_for_joining: string
           referral_member?: string | null
+          state?: string | null
           university: string
           updated_at?: string
           user_id: string
@@ -506,11 +512,14 @@ export type Database = {
           is_public?: boolean | null
           job_title?: string | null
           last_name?: string
+          lat?: number | null
           linkedin_profile?: string | null
+          lng?: number | null
           membership_type?: string
           profile_photo_url?: string | null
           reason_for_joining?: string
           referral_member?: string | null
+          state?: string | null
           university?: string
           updated_at?: string
           user_id?: string
