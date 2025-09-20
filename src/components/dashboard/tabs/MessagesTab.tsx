@@ -280,21 +280,42 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     }
   };
 
-  const handleConversationClick = (conversation: Conversation) => {
+  const handleConversationClick = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
     setCurrentView('conversation');
     
-    // Mark messages as read
-    if (conversation.unreadCount > 0) {
-      setConversations(prev => 
-        prev.map(c => 
-          c.id === conversation.id 
-            ? { ...c, unreadCount: 0, messages: c.messages.map(m => ({ ...m, is_read: true })) }
-            : c
-        )
-      );
-    }
+    // Mark messages as read in database
+    if (conversation.unreadCount > 0 && user) {
+      try {
+        // Get unread message IDs from this conversation where user is recipient
+        const unreadMessageIds = conversation.messages
+          .filter(m => m.recipient_id === user.id && !m.is_read)
+          .map(m => m.id);
 
+        if (unreadMessageIds.length > 0) {
+          // Update messages as read in database
+          const { error } = await supabase
+            .from('messages')
+            .update({ is_read: true })
+            .in('id', unreadMessageIds);
+
+          if (error) {
+            console.error('Error marking messages as read:', error);
+          } else {
+            // Update local state only after successful database update
+            setConversations(prev => 
+              prev.map(c => 
+                c.id === conversation.id 
+                  ? { ...c, unreadCount: 0, messages: c.messages.map(m => ({ ...m, is_read: true })) }
+                  : c
+              )
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error updating read status:', error);
+      }
+    }
   };
 
   const handleBackToList = () => {
