@@ -1,4 +1,5 @@
 import { Home, Users, MessageCircle, Search, MapPin, UserCheck, Calendar, Video, BookOpen, Heart, User as UserIcon, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +14,8 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { mockMessages } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
 
 interface AppMemberSidebarProps {
   userProfile: {
@@ -28,7 +30,56 @@ interface AppMemberSidebarProps {
 }
 
 const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab, isInConversationView, onMessagesReset }: AppMemberSidebarProps) => {
-  const unreadMessageCount = mockMessages.filter((m) => m.unread).length;
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const { user } = useMemberAuth();
+
+  // Fetch unread message count
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('recipient_id', user.id)
+          .eq('is_read', false)
+          .is('deleted_at', null);
+
+        if (error) {
+          console.error('Error fetching unread message count:', error);
+          return;
+        }
+
+        setUnreadMessageCount(data?.length || 0);
+      } catch (error) {
+        console.error('Error fetching unread message count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Set up real-time subscription for new messages
+    const channel = supabase
+      .channel('unread-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const groups = [
     {
