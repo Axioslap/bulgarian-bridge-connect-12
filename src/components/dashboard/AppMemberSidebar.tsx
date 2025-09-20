@@ -40,10 +40,10 @@ const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab, isInConversati
     const fetchUnreadCount = async () => {
       try {
         const { data, error } = await supabase
-          .from('messages')
-          .select('id')
-          .eq('recipient_id', user.id)
-          .eq('is_read', false)
+          .from('message_receipts')
+          .select('message_id')
+          .eq('user_id', user.id)
+          .is('read_at', null)
           .is('deleted_at', null);
 
         if (error) {
@@ -59,16 +59,16 @@ const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab, isInConversati
 
     fetchUnreadCount();
 
-    // Set up real-time subscription for new messages
+    // Set up real-time subscription for receipts updates
     const channel = supabase
-      .channel('unread-messages')
+      .channel('unread-message-receipts')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'messages',
-          filter: `recipient_id=eq.${user.id}`
+          table: 'message_receipts',
+          filter: `user_id=eq.${user.id}`
         },
         () => {
           fetchUnreadCount();

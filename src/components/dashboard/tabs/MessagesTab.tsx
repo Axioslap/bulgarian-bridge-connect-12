@@ -204,8 +204,9 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
         
         conversation.messages.push(messageWithProfiles);
         
-        // Count unread messages from partner
-        if (!isFromUser && !message.is_read) {
+        // Count unread messages from partner using receipts (read_at is null)
+        const userReceipt = (message as any).receipts?.[0];
+        if (!isFromUser && !userReceipt?.read_at) {
           conversation.unreadCount++;
         }
       });
@@ -284,20 +285,21 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
     setSelectedConversation(conversation);
     setCurrentView('conversation');
     
-    // Mark messages as read in database
+    // Mark messages as read for this user via receipts
     if (conversation.unreadCount > 0 && user) {
       try {
-        // Get unread message IDs from this conversation where user is recipient
-        const unreadMessageIds = conversation.messages
-          .filter(m => m.recipient_id === user.id && !m.is_read)
+        // Get all message IDs in this conversation where current user is the recipient
+        const messageIdsToMark = conversation.messages
+          .filter(m => m.recipient_id === user.id)
           .map(m => m.id);
 
-        if (unreadMessageIds.length > 0) {
-          // Update messages as read in database
+        if (messageIdsToMark.length > 0) {
+          // Update receipts as read in database for this user
           const { error } = await supabase
-            .from('messages')
-            .update({ is_read: true })
-            .in('id', unreadMessageIds);
+            .from('message_receipts')
+            .update({ read_at: new Date().toISOString() })
+            .in('message_id', messageIdsToMark)
+            .eq('user_id', user.id);
 
           if (error) {
             console.error('Error marking messages as read:', error);
@@ -306,7 +308,7 @@ const MessagesTab = ({ onViewChange, onResetToListRegister }: MessagesTabProps) 
             setConversations(prev => 
               prev.map(c => 
                 c.id === conversation.id 
-                  ? { ...c, unreadCount: 0, messages: c.messages.map(m => ({ ...m, is_read: true })) }
+                  ? { ...c, unreadCount: 0, messages: c.messages.map(m => (m.recipient_id === user.id ? { ...m, is_read: true } : m)) }
                   : c
               )
             );
