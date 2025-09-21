@@ -41,8 +41,9 @@ const AppMemberSidebar = ({ userProfile, activeTab, setActiveTab, isInConversati
       try {
         const { data, error } = await supabase
           .from('message_receipts')
-          .select('message_id')
+          .select('message_id, messages!inner(recipient_id)')
           .eq('user_id', user.id)
+          .eq('messages.recipient_id', user.id)
           .is('read_at', null)
           .is('deleted_at', null);
 
