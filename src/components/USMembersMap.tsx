@@ -34,16 +34,42 @@ const USMembersMap = ({ onStateClick }: USMembersMapProps) => {
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // Initialize map with dummy token (will be replaced with user's token)
-    mapboxgl.accessToken = 'pk.eyJ1IjoidGVzdC11c2VyIiwiYSI6ImNsempycWlhZTEwZGwzbHM0Y2hpNG9uNzEifQ.example';
+    const initializeMap = async () => {
+      try {
+        // Get Mapbox token from edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.error('No active session for Mapbox token');
+          setLoading(false);
+          return;
+        }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: [-98.5, 39.8],
-      zoom: 3.2,
-      projection: 'mercator'
-    });
+        const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-mapbox-token');
+        
+        if (tokenError || !tokenData?.token) {
+          console.error('Failed to get Mapbox token:', tokenError);
+          setLoading(false);
+          return;
+        }
+
+        // Set Mapbox access token
+        mapboxgl.accessToken = tokenData.token;
+
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current!,
+          style: "mapbox://styles/mapbox/light-v11",
+          center: [-98.5, 39.8],
+          zoom: 3.2,
+          projection: 'mercator'
+        });
+
+        map.current.on('load', loadStateData);
+
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        setLoading(false);
+      }
+    };
 
     const loadStateData = async () => {
       try {
@@ -98,7 +124,7 @@ const USMembersMap = ({ onStateClick }: USMembersMapProps) => {
       }
     };
 
-    map.current.on('load', loadStateData);
+    initializeMap();
 
     return () => {
       map.current?.remove();
