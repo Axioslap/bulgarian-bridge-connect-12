@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Search, Play, Filter, Plus, Heart, Eye, Trash2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { useToast } from "@/hooks/use-toast";
+import type { User } from "@supabase/supabase-js";
 
 interface Video {
   id: string;
@@ -62,8 +62,8 @@ const VideosTab = () => {
     tags: [] as string[],
   });
   const [tagInput, setTagInput] = useState("");
+  const [user, setUser] = useState<User | null>(null);
   
-  const { user } = useMemberAuth();
   const { toast } = useToast();
   
   const categories = ["All", "Tech", "Education", "Business", "Community", "Inspiration", "Success Stories"];
@@ -80,8 +80,26 @@ const VideosTab = () => {
     return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   };
 
+  // Robust auth wiring
   useEffect(() => {
-    console.log("VideosTab - user state:", user);
+    let mounted = true;
+
+    (async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (mounted) setUser(session?.session?.user ?? null);
+    })();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription?.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     fetchVideos();
   }, [user]);
 
