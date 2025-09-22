@@ -144,7 +144,16 @@ const VideosTab = () => {
   };
 
   const addVideo = async () => {
-    if (!user || !newVideo.title || !newVideo.youtube_url) {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to share videos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newVideo.title || !newVideo.youtube_url) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
