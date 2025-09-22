@@ -25,6 +25,7 @@ import { Search, Play, Filter, Plus, Heart, Eye, Trash2, ExternalLink } from "lu
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
+import ShareVideoBox from "@/components/ShareVideoBox";
 
 interface Video {
   id: string;
@@ -457,6 +458,11 @@ const VideosTab = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Debug Video Sharing Component */}
+        {user && (
+          <ShareVideoBox />
+        )}
+
         {/* Search and Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
