@@ -81,6 +81,7 @@ const VideosTab = () => {
   };
 
   useEffect(() => {
+    console.log("VideosTab - user state:", user);
     fetchVideos();
   }, [user]);
 
@@ -144,7 +145,10 @@ const VideosTab = () => {
   };
 
   const addVideo = async () => {
+    console.log("addVideo called - user:", user);
+    
     if (!user) {
+      console.log("No user found, showing auth error");
       toast({
         title: "Authentication required",
         description: "Please log in to share videos.",
@@ -421,7 +425,10 @@ const VideosTab = () => {
                     <Button variant="outline" onClick={() => setIsAddVideoOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={addVideo}>
+                    <Button onClick={() => {
+                      console.log("Share Video button clicked");
+                      addVideo();
+                    }}>
                       Share Video
                     </Button>
                   </div>
