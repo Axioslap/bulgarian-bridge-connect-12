@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Search, Play, Filter, Plus, Heart, Eye, Trash2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -64,6 +65,8 @@ const VideosTab = () => {
   });
   const [tagInput, setTagInput] = useState("");
   const [user, setUser] = useState<User | null>(null);
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [activeVideo, setActiveVideo] = useState<Video | null>(null);
   
   const { toast } = useToast();
   
@@ -341,8 +344,9 @@ const VideosTab = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const openYouTubeVideo = (videoId: string) => {
-    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+  const openPlayer = (video: Video) => {
+    setActiveVideo(video);
+    setPlayerOpen(true);
   };
 
   return (
@@ -491,6 +495,33 @@ const VideosTab = () => {
           </div>
         </div>
 
+        {/* Video Player Modal */}
+        <Dialog open={playerOpen} onOpenChange={setPlayerOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{activeVideo?.title || "Video"}</DialogTitle>
+              <DialogDescription>{activeVideo?.description || ""}</DialogDescription>
+            </DialogHeader>
+            <AspectRatio ratio={16/9} className="w-full overflow-hidden rounded-lg">
+              <iframe
+                src={activeVideo ? `https://www.youtube-nocookie.com/embed/${activeVideo.youtube_video_id}?autoplay=1&rel=0&modestbranding=1` : undefined}
+                title={activeVideo?.title || "YouTube video player"}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            </AspectRatio>
+            <div className="flex justify-end pt-3">
+              <Button asChild variant="outline">
+                <a href={activeVideo ? `https://youtu.be/${activeVideo.youtube_video_id}` : '#'} target="_blank" rel="noopener noreferrer">
+                  Open on YouTube
+                </a>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Videos Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -514,9 +545,9 @@ const VideosTab = () => {
                     src={video.thumbnail_url} 
                     alt={video.title}
                     className="w-full h-48 object-cover rounded-t-lg cursor-pointer"
-                    onClick={() => openYouTubeVideo(video.youtube_video_id)}
+                    onClick={() => openPlayer(video)}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-lg cursor-pointer" onClick={() => openYouTubeVideo(video.youtube_video_id)}>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-lg cursor-pointer" onClick={() => openPlayer(video)}>
                     <Play className="h-12 w-12 text-white" />
                   </div>
                   <Badge className="absolute bottom-2 right-2 bg-black/70 text-white">
