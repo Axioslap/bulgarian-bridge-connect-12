@@ -228,11 +228,11 @@ const VideosTab = () => {
       });
       setTagInput("");
       fetchVideos();
-    } catch (error) {
-      console.error("Error adding video:", error);
+    } catch (err: any) {
+      console.error("Error adding video:", err);
       toast({
-        title: "Error",
-        description: "Failed to add video. Please try again.",
+        title: "Insert failed",
+        description: `${err?.message || 'Unknown error'} (code ${err?.code || 'n/a'})`,
         variant: "destructive",
       });
     }
