@@ -25,6 +25,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Search, Play, Filter, Plus, Heart, Eye, Trash2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import type { User } from "@supabase/supabase-js";
 import ShareVideoBox from "@/components/ShareVideoBox";
 
@@ -67,8 +68,10 @@ const VideosTab = () => {
   const [user, setUser] = useState<User | null>(null);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
+  const [canUpload, setCanUpload] = useState(false);
   
   const { toast } = useToast();
+  const { user: authUser, hasRoleOrHigher, loading: authLoading } = useAuth();
   
   const categories = ["All", "Tech", "Education", "Business", "Community", "Inspiration", "Success Stories"];
 
@@ -102,6 +105,19 @@ const VideosTab = () => {
       subscription?.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (authUser) {
+        const isSuperAdmin = await hasRoleOrHigher('superadmin');
+        setCanUpload(isSuperAdmin);
+      } else {
+        setCanUpload(false);
+      }
+    };
+    
+    checkPermissions();
+  }, [authUser, hasRoleOrHigher]);
 
   useEffect(() => {
     fetchVideos();
@@ -359,7 +375,7 @@ const VideosTab = () => {
               Watch inspiring stories and insights from our community
             </CardDescription>
           </div>
-          {user && (
+          {canUpload && (
             <Dialog open={isAddVideoOpen} onOpenChange={setIsAddVideoOpen}>
               <DialogTrigger asChild>
                 <Button>
