@@ -1,16 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Globe, ArrowLeft, MapPin } from "lucide-react";
+import { Globe, ArrowLeft, MapPin, Lock } from "lucide-react";
 import USMembersMap from "@/components/USMembersMap";
 import StateMembersMap from "@/components/StateMembersMap";
+import { useAuth } from "@/hooks/useAuth";
 
 type MapLevel = 'world' | 'usa' | 'state';
 
 const MapTab = () => {
   const [mapLevel, setMapLevel] = useState<MapLevel>('world');
   const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [canViewMap, setCanViewMap] = useState(false);
+  
+  const { user, hasRoleOrHigher, loading } = useAuth();
+
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (user) {
+        const isSuperAdmin = await hasRoleOrHigher('superadmin');
+        setCanViewMap(isSuperAdmin);
+      } else {
+        setCanViewMap(false);
+      }
+    };
+    
+    checkPermissions();
+  }, [user, hasRoleOrHigher]);
 
   const handleUSAClick = () => {
     setMapLevel('usa');
@@ -44,6 +61,28 @@ const MapTab = () => {
     if (mapLevel === 'state') return 'View individual member profiles';
     return '';
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!canViewMap) {
+    return (
+      <Card className="p-8">
+        <div className="text-center">
+          <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
+          <p className="text-muted-foreground">
+            Only Super Administrators can access the members map.
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

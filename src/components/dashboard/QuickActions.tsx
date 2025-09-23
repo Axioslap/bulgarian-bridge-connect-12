@@ -16,7 +16,7 @@ const QuickActions = ({ onActionClick }: QuickActionsProps) => {
       color: "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
     },
     {
-      id: "discussion",
+      id: "posts",
       label: "Start Discussion",
       icon: MessageSquare,
       description: "Create new post",

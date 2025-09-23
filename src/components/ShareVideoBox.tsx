@@ -6,16 +6,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, Lock } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ShareVideoBox() {
-  const [user, setUser] = useState<User | null>(null);
   const [title, setTitle] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [canUpload, setCanUpload] = useState(false);
+  
+  const { user, hasRoleOrHigher, loading } = useAuth();
 
   // Extract YouTube video ID from URL
   const extractYouTubeId = (url: string): string => {
@@ -30,40 +33,44 @@ export default function ShareVideoBox() {
   };
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (mounted) setUser(data?.session?.user ?? null);
-    })();
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setUser(s?.user ?? null);
-    });
-    return () => {
-      mounted = false;
-      sub?.subscription.unsubscribe();
+    const checkPermissions = async () => {
+      if (user) {
+        const isSuperAdmin = await hasRoleOrHigher('superadmin');
+        setCanUpload(isSuperAdmin);
+      } else {
+        setCanUpload(false);
+      }
     };
-  }, []);
+    
+    checkPermissions();
+  }, [user, hasRoleOrHigher]);
 
   async function share() {
     setStatus("");
-    setLoading(true);
+    setIsSubmitting(true);
 
     if (!user) {
       setStatus("❌ Not logged in. Please log in first.");
-      setLoading(false);
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!canUpload) {
+      setStatus("❌ Only Super Administrators can upload videos.");
+      setIsSubmitting(false);
       return;
     }
     
     if (!title.trim() || !youtubeUrl.trim()) {
       setStatus("❌ Enter a title and a YouTube URL.");
-      setLoading(false);
+      setIsSubmitting(false);
       return;
     }
 
     const videoId = extractYouTubeId(youtubeUrl);
     if (!videoId) {
       setStatus("❌ Please enter a valid YouTube URL.");
-      setLoading(false);
+      setIsSubmitting(false);
       return;
     }
 
@@ -94,7 +101,35 @@ export default function ShareVideoBox() {
       setStatus(`❌ Unexpected error: ${err.message}`);
     }
     
-    setLoading(false);
+    setIsSubmitting(false);
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!canUpload) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Video Upload Restricted
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-muted-foreground">
+            Only Super Administrators can upload videos.
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -102,10 +137,10 @@ export default function ShareVideoBox() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Plus className="h-5 w-5" />
-          Share Video (Debug Mode)
+          Share Video
         </CardTitle>
         <CardDescription>
-          Share a YouTube video with detailed error reporting
+          Share a YouTube video with the community
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -154,10 +189,10 @@ export default function ShareVideoBox() {
 
         <Button
           onClick={share}
-          disabled={!user || loading}
+          disabled={!user || !canUpload || isSubmitting}
           className="w-full"
         >
-          {loading ? "Sharing..." : "Share Video"}
+          {isSubmitting ? "Sharing..." : "Share Video"}
         </Button>
 
         {status && (
