@@ -247,6 +247,7 @@ export type Database = {
           id: string
           is_upcoming: boolean | null
           location: string | null
+          member_access_level: string | null
           registration_url: string | null
           title: string
           updated_at: string
@@ -260,6 +261,7 @@ export type Database = {
           id?: string
           is_upcoming?: boolean | null
           location?: string | null
+          member_access_level?: string | null
           registration_url?: string | null
           title: string
           updated_at?: string
@@ -273,6 +275,7 @@ export type Database = {
           id?: string
           is_upcoming?: boolean | null
           location?: string | null
+          member_access_level?: string | null
           registration_url?: string | null
           title?: string
           updated_at?: string
