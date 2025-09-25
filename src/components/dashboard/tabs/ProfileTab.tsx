@@ -6,26 +6,76 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import SkillSelector from "@/components/SkillSelector";
-import { Camera, MapPin, X } from "lucide-react";
-import { useState } from "react";
+import { Camera, MapPin, X, Check, ChevronsUpDown } from "lucide-react";
+import { useState, useEffect } from "react";
 import { validateTextInput } from "@/utils/security";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface ProfileTabProps {
   userProfile: {
     bio: string;
     name: string;
+    city: string;
+    country: string;
+    profile_photo_url: string;
+    areas_of_interest: string[];
   };
   userSkills: string[];
   setUserSkills: (skills: string[]) => void;
 }
 
+// Popular cities data for autocomplete
+const popularCities = [
+  // US Cities
+  "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX", "Phoenix, AZ",
+  "Philadelphia, PA", "San Antonio, TX", "San Diego, CA", "Dallas, TX", "San Jose, CA",
+  "Austin, TX", "Jacksonville, FL", "Fort Worth, TX", "Columbus, OH", "Charlotte, NC",
+  "San Francisco, CA", "Indianapolis, IN", "Seattle, WA", "Denver, CO", "Washington, DC",
+  "Boston, MA", "Nashville, TN", "Detroit, MI", "Oklahoma City, OK", "Portland, OR",
+  "Las Vegas, NV", "Memphis, TN", "Louisville, KY", "Baltimore, MD", "Milwaukee, WI",
+  "Albuquerque, NM", "Tucson, AZ", "Fresno, CA", "Sacramento, CA", "Mesa, AZ",
+  "Kansas City, MO", "Atlanta, GA", "Long Beach, CA", "Colorado Springs, CO", "Raleigh, NC",
+  "Miami, FL", "Virginia Beach, VA", "Omaha, NE", "Oakland, CA", "Minneapolis, MN",
+  "Tulsa, OK", "Arlington, TX", "Tampa, FL", "New Orleans, LA", "Wichita, KS",
+  
+  // Bulgarian Cities
+  "Sofia, Bulgaria", "Plovdiv, Bulgaria", "Varna, Bulgaria", "Burgas, Bulgaria", "Ruse, Bulgaria",
+  "Stara Zagora, Bulgaria", "Pleven, Bulgaria", "Sliven, Bulgaria", "Dobrich, Bulgaria", "Shumen, Bulgaria",
+  "Pernik, Bulgaria", "Haskovo, Bulgaria", "Yambol, Bulgaria", "Pazardzhik, Bulgaria", "Blagoevgrad, Bulgaria",
+  "Veliko Tarnovo, Bulgaria", "Gabrovo, Bulgaria", "Asenovgrad, Bulgaria", "Vidin, Bulgaria", "Vratsa, Bulgaria",
+  
+  // European Cities
+  "London, UK", "Paris, France", "Berlin, Germany", "Madrid, Spain", "Rome, Italy",
+  "Amsterdam, Netherlands", "Vienna, Austria", "Brussels, Belgium", "Prague, Czech Republic", "Warsaw, Poland",
+  "Stockholm, Sweden", "Copenhagen, Denmark", "Helsinki, Finland", "Oslo, Norway", "Dublin, Ireland",
+  "Lisbon, Portugal", "Athens, Greece", "Budapest, Hungary", "Bucharest, Romania", "Zagreb, Croatia",
+  "Ljubljana, Slovenia", "Bratislava, Slovakia", "Tallinn, Estonia", "Riga, Latvia", "Vilnius, Lithuania"
+];
+
 const ProfileTab = ({ userProfile, userSkills, setUserSkills }: ProfileTabProps) => {
-  const [profilePicture, setProfilePicture] = useState<string>("");
-  const [location, setLocation] = useState("Boston, MA");
-  const [interests, setInterests] = useState<string[]>(["Technology", "Entrepreneurship", "Bulgarian Culture", "Networking"]);
+  const { toast } = useToast();
+  const [profilePicture, setProfilePicture] = useState<string>(userProfile?.profile_photo_url || "");
+  const [location, setLocation] = useState(`${userProfile?.city || ""}, ${userProfile?.country || ""}`.replace(", ", "").trim());
+  const [bio, setBio] = useState("");
+  const [interests, setInterests] = useState<string[]>(userProfile?.areas_of_interest || []);
   const [newInterest, setNewInterest] = useState("");
   const [isProfileVisibleToSupporters, setIsProfileVisibleToSupporters] = useState(false);
+  const [isLocationOpen, setIsLocationOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (userProfile) {
+      setProfilePicture(userProfile.profile_photo_url || "");
+      const loc = `${userProfile.city || ""}, ${userProfile.country || ""}`.replace(", ", "").trim();
+      setLocation(loc);
+      setInterests(userProfile.areas_of_interest || []);
+    }
+  }, [userProfile]);
 
   const handleProfilePictureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -55,6 +105,60 @@ const ProfileTab = ({ userProfile, userSkills, setUserSkills }: ProfileTabProps)
     if (e.key === 'Enter') {
       e.preventDefault();
       addInterest();
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to update your profile.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Parse location into city and country
+      const locationParts = location.split(',').map(part => part.trim());
+      const city = locationParts[0] || '';
+      const country = locationParts[1] || '';
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          city,
+          country,
+          areas_of_interest: interests,
+          profile_photo_url: profilePicture,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update profile. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Your profile has been updated successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error", 
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,23 +208,71 @@ const ProfileTab = ({ userProfile, userSkills, setUserSkills }: ProfileTabProps)
             <MapPin className="w-4 h-4 inline mr-1" />
             Location
           </label>
-          <Input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="City, State"
-            maxLength={100}
-          />
+          <Popover open={isLocationOpen} onOpenChange={setIsLocationOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={isLocationOpen}
+                className="w-full justify-between"
+              >
+                {location || "Select city..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0">
+              <Command>
+                <CommandInput 
+                  placeholder="Search cities..." 
+                  value={location}
+                  onValueChange={setLocation}
+                />
+                <CommandList>
+                  <CommandEmpty>No city found.</CommandEmpty>
+                  <CommandGroup>
+                    {popularCities
+                      .filter(city => 
+                        city.toLowerCase().includes(location.toLowerCase())
+                      )
+                      .slice(0, 10)
+                      .map((city) => (
+                        <CommandItem
+                          key={city}
+                          value={city}
+                          onSelect={(currentValue) => {
+                            setLocation(currentValue);
+                            setIsLocationOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              location === city ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {city}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Bio Section */}
         <div>
           <label className="text-sm font-medium mb-2 block">Bio</label>
           <Textarea
-            value={userProfile.bio}
-            readOnly
-            rows={3}
-            className="bg-gray-50"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Tell us about yourself, your professional background, and what you're passionate about..."
+            rows={4}
+            maxLength={500}
           />
+          <p className="text-xs text-muted-foreground mt-1">
+            {bio.length}/500 characters
+          </p>
         </div>
 
         {/* Skills Section */}
@@ -188,7 +340,13 @@ const ProfileTab = ({ userProfile, userSkills, setUserSkills }: ProfileTabProps)
         </div>
 
         <div>
-          <Button>Save Changes</Button>
+          <Button 
+            onClick={handleSaveChanges} 
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+          >
+            {isLoading ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </CardContent>
     </Card>

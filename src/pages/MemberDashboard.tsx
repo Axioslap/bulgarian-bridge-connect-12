@@ -65,7 +65,18 @@ const MemberDashboard = () => {
       case "map":
         return <MapTab />;
       case "profile":
-        return <ProfileTab userProfile={userProfile} userSkills={userSkills} setUserSkills={setUserSkills} />;
+        return <ProfileTab 
+          userProfile={{
+            bio: userProfile?.bio || "",
+            name: userProfile?.name || "",
+            city: userProfile?.city || "",
+            country: userProfile?.country || "",
+            profile_photo_url: userProfile?.profile_photo_url || "",
+            areas_of_interest: userProfile?.areas_of_interest || []
+          }} 
+          userSkills={userSkills} 
+          setUserSkills={setUserSkills} 
+        />;
       case "events":
         return <EventsTab />;
       case "resources":
