@@ -27,7 +27,6 @@ const BoardMember = lazy(() => import("./pages/BoardMember"));
 
 // Components loaded synchronously for better UX
 import ProtectedRoute from "./components/ProtectedRoute";
-import SuperAdminRoute from "./components/SuperAdminRoute";
 import ScrollToTop from "./components/ScrollToTop";
 
 // Loading component for Suspense fallback
@@ -72,11 +71,7 @@ const App = () => (
             <Route path="/events" element={<Events />} />
             <Route path="/news" element={<News />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/admin/invite-register" element={
-              <SuperAdminRoute>
-                <Register />
-              </SuperAdminRoute>
-            } />
+            <Route path="/register" element={<Register />} />
             <Route path="/member" element={
               <ProtectedRoute>
                 <MemberDashboard />
