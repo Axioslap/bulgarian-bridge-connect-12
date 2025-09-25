@@ -4,11 +4,43 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Database, Mail, Shield } from 'lucide-react';
+import { Settings, Database, Mail, Shield, UserPlus, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const AdminSettings: React.FC = () => {
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            User Registration
+          </CardTitle>
+          <CardDescription>
+            Manage user registration and invitations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Invite New Members</h4>
+                <p className="text-sm text-muted-foreground">
+                  Send registration invitations to new members
+                </p>
+              </div>
+              <Link to="/admin/invite-register" target="_blank" rel="noopener noreferrer">
+                <Button className="gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Invite Users
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
