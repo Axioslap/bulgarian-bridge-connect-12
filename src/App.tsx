@@ -24,7 +24,6 @@ const PostDetail = lazy(() => import("./pages/PostDetail"));
 const Partners = lazy(() => import("./pages/Partners"));
 const PartnerDetail = lazy(() => import("./pages/PartnerDetail"));
 const BoardMember = lazy(() => import("./pages/BoardMember"));
-const MembershipInfo = lazy(() => import("./pages/MembershipInfo"));
 
 // Components loaded synchronously for better UX
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -72,7 +71,6 @@ const App = () => (
         <Route path="/become-expert" element={<BecomeExpert />} />
             <Route path="/events" element={<Events />} />
             <Route path="/news" element={<News />} />
-            <Route path="/membership" element={<MembershipInfo />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin/invite-register" element={
               <SuperAdminRoute>
