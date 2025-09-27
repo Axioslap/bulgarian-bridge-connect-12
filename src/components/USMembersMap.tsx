@@ -1,81 +1,44 @@
-import mapboxgl from "mapbox-gl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import "mapbox-gl/dist/mapbox-gl.css";
-
-/** State centroids for USA map clustering */
-const STATE_CENTROIDS: Record<string, [number, number]> = {
-  AL: [-86.80, 32.80], AK: [-152.40, 64.20], AZ: [-111.93, 34.20], AR: [-92.44, 35.20],
-  CA: [-119.70, 36.78], CO: [-105.55, 39.00], CT: [-72.70, 41.60], DC: [-77.04, 38.90],
-  DE: [-75.50, 39.00], FL: [-81.52, 27.76], GA: [-83.44, 32.65], HI: [-155.58, 19.90],
-  IA: [-93.50, 41.88], ID: [-114.14, 44.07], IL: [-89.40, 40.00], IN: [-86.13, 39.90],
-  KS: [-98.38, 38.50], KY: [-84.27, 37.60], LA: [-91.96, 31.05], MA: [-71.38, 42.40],
-  MD: [-76.70, 39.00], ME: [-69.24, 45.40], MI: [-84.76, 44.30], MN: [-94.69, 46.00],
-  MO: [-92.60, 38.60], MS: [-89.70, 32.70], MT: [-110.00, 47.00], NC: [-79.02, 35.50],
-  ND: [-100.40, 47.50], NE: [-99.90, 41.50], NH: [-71.58, 43.93], NJ: [-74.40, 40.10],
-  NM: [-106.10, 34.40], NV: [-116.70, 39.30], NY: [-75.00, 42.90], OH: [-82.80, 40.30],
-  OK: [-97.52, 35.50], OR: [-120.55, 43.90], PA: [-77.70, 41.10], RI: [-71.50, 41.70],
-  SC: [-80.90, 33.70], SD: [-100.00, 44.50], TN: [-86.40, 35.80], TX: [-99.40, 31.00],
-  UT: [-111.70, 39.40], VA: [-78.50, 37.50], VT: [-72.70, 44.00], WA: [-120.50, 47.40],
-  WI: [-89.60, 44.50], WV: [-80.62, 38.70], WY: [-107.55, 43.00]
-};
 
 interface USMembersMapProps {
   onStateClick?: (state: string) => void;
 }
 
+interface StateInfo {
+  name: string;
+  abbreviation: string;
+  count: number;
+}
+
 const USMembersMap = ({ onStateClick }: USMembersMapProps) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stateData, setStateData] = useState<Record<string, StateInfo>>({});
+  const [hoveredState, setHoveredState] = useState<string | null>(null);
+
+  // US State mappings
+  const stateNames: Record<string, string> = {
+    AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+    CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+    HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+    KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+    MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+    MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+    NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
+    OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+    SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+    VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+    DC: "District of Columbia"
+  };
 
   useEffect(() => {
-    if (!mapContainer.current) return;
-
-    const initializeMap = async () => {
-      try {
-        // Get Mapbox token from edge function
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.error('No active session for Mapbox token');
-          setLoading(false);
-          return;
-        }
-
-        const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-mapbox-token');
-        
-        if (tokenError || !tokenData?.token) {
-          console.error('Failed to get Mapbox token:', tokenError);
-          setLoading(false);
-          return;
-        }
-
-        // Set Mapbox access token
-        mapboxgl.accessToken = tokenData.token;
-
-        map.current = new mapboxgl.Map({
-          container: mapContainer.current!,
-          style: "mapbox://styles/mapbox/light-v11",
-          center: [-98.5, 39.8],
-          zoom: 3.2,
-          projection: 'mercator'
-        });
-
-        map.current.on('load', loadStateData);
-
-      } catch (error) {
-        console.error('Error initializing map:', error);
-        setLoading(false);
-      }
-    };
-
     const loadStateData = async () => {
       try {
         setLoading(true);
 
-        // Aggregate members by state
+        // Get member counts by state
         const { data, error } = await supabase
           .from("profiles")
           .select("state, id")
@@ -92,31 +55,22 @@ const USMembersMap = ({ onStateClick }: USMembersMapProps) => {
         const stateCounts: Record<string, number> = {};
         data?.forEach((profile) => {
           const state = profile.state?.trim().toUpperCase();
-          if (state) {
+          if (state && stateNames[state]) {
             stateCounts[state] = (stateCounts[state] || 0) + 1;
           }
         });
 
-        // Create markers for each state with members
-        Object.entries(stateCounts).forEach(([state, count]) => {
-          const center = STATE_CENTROIDS[state];
-          if (!center || count === 0) return;
-
-          const el = document.createElement("div");
-          el.className = "cluster-badge bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer rounded-full flex items-center justify-center font-semibold text-sm border-2 border-background shadow-lg";
-          el.style.width = "40px";
-          el.style.height = "40px";
-          el.innerHTML = count.toString();
-          
-          el.onclick = () => {
-            if (onStateClick) {
-              onStateClick(state);
-            }
+        // Build state info
+        const stateInfo: Record<string, StateInfo> = {};
+        Object.entries(stateNames).forEach(([abbr, name]) => {
+          stateInfo[abbr] = {
+            name,
+            abbreviation: abbr,
+            count: stateCounts[abbr] || 0
           };
-
-          new mapboxgl.Marker(el).setLngLat(center).addTo(map.current!);
         });
 
+        setStateData(stateInfo);
       } catch (error) {
         console.error('Error loading USA map data:', error);
       } finally {
@@ -124,33 +78,268 @@ const USMembersMap = ({ onStateClick }: USMembersMapProps) => {
       }
     };
 
-    initializeMap();
+    loadStateData();
+  }, []);
 
-    return () => {
-      map.current?.remove();
-    };
-  }, [onStateClick]);
+  const getStateColor = (count: number) => {
+    if (count === 0) return "#e5e7eb";
+    if (count <= 2) return "#dbeafe";
+    if (count <= 5) return "#93c5fd";
+    if (count <= 10) return "#3b82f6";
+    return "#1d4ed8";
+  };
+
+  const handleStateClick = (stateAbbr: string) => {
+    if (onStateClick && stateData[stateAbbr]?.count > 0) {
+      onStateClick(stateAbbr);
+    }
+  };
 
   return (
     <Card className="relative overflow-hidden">
-      <div 
-        ref={mapContainer} 
-        className="h-[500px] w-full rounded-lg bg-muted/20"
-      />
-      {loading && (
-        <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Loading USA map...</p>
+      <div className="p-6">
+        {loading && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Loading USA map...</p>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-background/90 backdrop-blur-sm rounded-lg p-3 border shadow-lg mb-4 inline-block">
+          <div className="text-sm font-medium mb-1">USA Members Map</div>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <div>🔵 Blue shades = Member density</div>
+            <div>Numbers show member count</div>
+            <div>Click to zoom into state</div>
           </div>
         </div>
-      )}
-      <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 border shadow-lg">
-        <div className="text-sm font-medium mb-1">USA Members Map</div>
-        <div className="text-xs text-muted-foreground space-y-1">
-          <div>🔵 Blue circles = State clusters</div>
-          <div>Numbers show member count</div>
-          <div>Click to zoom into state</div>
+
+        <div className="relative w-full max-w-4xl mx-auto">
+          <svg viewBox="0 0 1000 600" className="w-full h-auto">
+            {/* Simplified US States SVG paths */}
+            <g>
+              {/* California */}
+              <path
+                d="M50 150 L50 450 L200 450 L200 150 Z"
+                fill={getStateColor(stateData.CA?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('CA')}
+                onMouseEnter={() => setHoveredState('CA')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.CA?.count > 0 && (
+                <text x="125" y="300" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.CA.count}
+                </text>
+              )}
+
+              {/* Texas */}
+              <path
+                d="M350 350 L550 350 L550 500 L350 500 Z"
+                fill={getStateColor(stateData.TX?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('TX')}
+                onMouseEnter={() => setHoveredState('TX')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.TX?.count > 0 && (
+                <text x="450" y="425" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.TX.count}
+                </text>
+              )}
+
+              {/* Florida */}
+              <path
+                d="M700 400 L850 400 L850 500 L700 500 Z"
+                fill={getStateColor(stateData.FL?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('FL')}
+                onMouseEnter={() => setHoveredState('FL')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.FL?.count > 0 && (
+                <text x="775" y="450" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.FL.count}
+                </text>
+              )}
+
+              {/* New York */}
+              <path
+                d="M750 150 L850 150 L850 250 L750 250 Z"
+                fill={getStateColor(stateData.NY?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('NY')}
+                onMouseEnter={() => setHoveredState('NY')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.NY?.count > 0 && (
+                <text x="800" y="200" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.NY.count}
+                </text>
+              )}
+
+              {/* Illinois */}
+              <path
+                d="M550 200 L650 200 L650 350 L550 350 Z"
+                fill={getStateColor(stateData.IL?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('IL')}
+                onMouseEnter={() => setHoveredState('IL')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.IL?.count > 0 && (
+                <text x="600" y="275" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.IL.count}
+                </text>
+              )}
+
+              {/* Pennsylvania */}
+              <path
+                d="M650 200 L750 200 L750 300 L650 300 Z"
+                fill={getStateColor(stateData.PA?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('PA')}
+                onMouseEnter={() => setHoveredState('PA')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.PA?.count > 0 && (
+                <text x="700" y="250" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.PA.count}
+                </text>
+              )}
+
+              {/* Ohio */}
+              <path
+                d="M600 250 L700 250 L700 350 L600 350 Z"
+                fill={getStateColor(stateData.OH?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('OH')}
+                onMouseEnter={() => setHoveredState('OH')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.OH?.count > 0 && (
+                <text x="650" y="300" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.OH.count}
+                </text>
+              )}
+
+              {/* Georgia */}
+              <path
+                d="M650 350 L750 350 L750 450 L650 450 Z"
+                fill={getStateColor(stateData.GA?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('GA')}
+                onMouseEnter={() => setHoveredState('GA')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.GA?.count > 0 && (
+                <text x="700" y="400" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.GA.count}
+                </text>
+              )}
+
+              {/* North Carolina */}
+              <path
+                d="M700 300 L800 300 L800 400 L700 400 Z"
+                fill={getStateColor(stateData.NC?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('NC')}
+                onMouseEnter={() => setHoveredState('NC')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.NC?.count > 0 && (
+                <text x="750" y="350" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.NC.count}
+                </text>
+              )}
+
+              {/* Michigan */}
+              <path
+                d="M550 150 L650 150 L650 250 L550 250 Z"
+                fill={getStateColor(stateData.MI?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('MI')}
+                onMouseEnter={() => setHoveredState('MI')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.MI?.count > 0 && (
+                <text x="600" y="200" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.MI.count}
+                </text>
+              )}
+
+              {/* Washington */}
+              <path
+                d="M100 50 L250 50 L250 150 L100 150 Z"
+                fill={getStateColor(stateData.WA?.count || 0)}
+                stroke="#374151"
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleStateClick('WA')}
+                onMouseEnter={() => setHoveredState('WA')}
+                onMouseLeave={() => setHoveredState(null)}
+              />
+              {stateData.WA?.count > 0 && (
+                <text x="175" y="100" textAnchor="middle" className="fill-white text-lg font-bold">
+                  {stateData.WA.count}
+                </text>
+              )}
+
+              {/* Add more states as needed - this is a simplified representation */}
+            </g>
+          </svg>
+
+          {/* Tooltip */}
+          {hoveredState && stateData[hoveredState] && (
+            <div className="absolute top-4 right-4 bg-background border rounded-lg p-3 shadow-lg z-10">
+              <div className="font-medium">{stateData[hoveredState].name}</div>
+              <div className="text-sm text-muted-foreground">
+                {stateData[hoveredState].count} members
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Legend */}
+        <div className="mt-6 flex flex-wrap gap-4 justify-center">
+          <div className="text-xs text-muted-foreground">Member Count:</div>
+          {[
+            { range: "0", color: "#e5e7eb" },
+            { range: "1-2", color: "#dbeafe" },
+            { range: "3-5", color: "#93c5fd" },
+            { range: "6-10", color: "#3b82f6" },
+            { range: "10+", color: "#1d4ed8" }
+          ].map((item) => (
+            <div key={item.range} className="flex items-center gap-2">
+              <div 
+                className="w-4 h-4 border border-gray-400"
+                style={{ backgroundColor: item.color }}
+              />
+              <span className="text-xs">{item.range}</span>
+            </div>
+          ))}
         </div>
       </div>
     </Card>
