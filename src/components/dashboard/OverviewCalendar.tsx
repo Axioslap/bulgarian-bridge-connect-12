@@ -19,6 +19,7 @@ interface Event {
   event_type: string;
   registration_url?: string;
   member_access_level: string;
+  image_url?: string;
 }
 
 interface EventRegistration {
@@ -236,12 +237,23 @@ const OverviewCalendar = () => {
                 <div className="space-y-2">
                   {selectedDateEvents.map((event) => (
                     <div key={event.id} className="flex items-center justify-between p-2 bg-background rounded border">
-                      <div>
-                        <p className="text-sm font-medium">{event.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          <MapPin className="inline h-3 w-3 mr-1" />
-                          {event.location}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {event.image_url && (
+                          <div className="w-12 h-12 overflow-hidden rounded-md flex-shrink-0">
+                            <img 
+                              src={event.image_url} 
+                              alt={event.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium">{event.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            <MapPin className="inline h-3 w-3 mr-1" />
+                            {event.location}
+                          </p>
+                        </div>
                       </div>
                       {isRegistered(event.id) ? (
                         <Button 
@@ -279,17 +291,28 @@ const OverviewCalendar = () => {
                 <div className="space-y-3">
                   {registeredEvents.map((event) => (
                     <div key={event.id} className="p-3 border rounded-lg">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{event.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <Clock className="inline h-3 w-3 mr-1" />
-                            {format(parseISO(event.event_date), "PPP")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            <MapPin className="inline h-3 w-3 mr-1" />
-                            {event.location}
-                          </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex gap-3 flex-1">
+                          {event.image_url && (
+                            <div className="w-16 h-16 overflow-hidden rounded-md flex-shrink-0">
+                              <img 
+                                src={event.image_url} 
+                                alt={event.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{event.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              <Clock className="inline h-3 w-3 mr-1" />
+                              {format(parseISO(event.event_date), "PPP")}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              <MapPin className="inline h-3 w-3 mr-1" />
+                              {event.location}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex flex-col gap-2">
                           <Badge variant="outline">Registered</Badge>
@@ -317,20 +340,31 @@ const OverviewCalendar = () => {
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {upcomingEvents.slice(0, 5).map((event) => (
                   <div key={event.id} className="p-3 border rounded-lg">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{event.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          <Clock className="inline h-3 w-3 mr-1" />
-                          {format(parseISO(event.event_date), "PPP")}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          <MapPin className="inline h-3 w-3 mr-1" />
-                          {event.location}
-                        </p>
-                        <Badge variant="secondary" className="mt-2 text-xs">
-                          {event.event_type}
-                        </Badge>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex gap-3 flex-1">
+                        {event.image_url && (
+                          <div className="w-16 h-16 overflow-hidden rounded-md flex-shrink-0">
+                            <img 
+                              src={event.image_url} 
+                              alt={event.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{event.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            <Clock className="inline h-3 w-3 mr-1" />
+                            {format(parseISO(event.event_date), "PPP")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            <MapPin className="inline h-3 w-3 mr-1" />
+                            {event.location}
+                          </p>
+                          <Badge variant="secondary" className="mt-2 text-xs">
+                            {event.event_type}
+                          </Badge>
+                        </div>
                       </div>
                       {isRegistered(event.id) ? (
                         <Button 

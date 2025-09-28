@@ -245,6 +245,7 @@ export type Database = {
           event_date: string
           event_type: string
           id: string
+          image_url: string | null
           is_upcoming: boolean | null
           location: string | null
           member_access_level: string | null
@@ -259,6 +260,7 @@ export type Database = {
           event_date: string
           event_type: string
           id?: string
+          image_url?: string | null
           is_upcoming?: boolean | null
           location?: string | null
           member_access_level?: string | null
@@ -273,6 +275,7 @@ export type Database = {
           event_date?: string
           event_type?: string
           id?: string
+          image_url?: string | null
           is_upcoming?: boolean | null
           location?: string | null
           member_access_level?: string | null

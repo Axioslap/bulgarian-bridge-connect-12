@@ -12,6 +12,7 @@ interface EventCardProps {
   type: "networking" | "workshop" | "panel" | "social";
   isUpcoming: boolean;
   registrationUrl?: string;
+  imageUrl?: string;
 }
 
 const EventCard = ({
@@ -21,7 +22,8 @@ const EventCard = ({
   description,
   type,
   isUpcoming,
-  registrationUrl
+  registrationUrl,
+  imageUrl
 }: EventCardProps) => {
   const typeColors = {
     networking: "bg-blue-100 text-blue-800",
@@ -38,7 +40,16 @@ const EventCard = ({
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col overflow-hidden">
+      {imageUrl && (
+        <div className="aspect-video w-full overflow-hidden">
+          <img 
+            src={imageUrl} 
+            alt={title}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <h3 className="text-lg font-semibold line-clamp-2">{title}</h3>
@@ -46,16 +57,16 @@ const EventCard = ({
             {typeLabels[type]}
           </Badge>
         </div>
-        <div className="flex items-center text-sm text-gray-500 mt-2">
+        <div className="flex items-center text-sm text-muted-foreground mt-2">
           <Calendar size={16} className="mr-2" />
           <span>{date}</span>
         </div>
-        <div className="text-sm text-gray-500 mt-1 ml-6">
+        <div className="text-sm text-muted-foreground mt-1 ml-6">
           {location}
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-gray-600">{description}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </CardContent>
       <CardFooter>
         {isUpcoming ? (
