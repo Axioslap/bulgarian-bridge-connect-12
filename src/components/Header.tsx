@@ -1,24 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { throttle } from "@/utils/performance";
 
-const Header = () => {
+const Header = memo(() => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    const handleScroll = () => {
+    const handleScroll = throttle(() => {
       setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
+    }, 100);
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const isActiveRoute = (path: string) => location.pathname === path;
+  const isActiveRoute = useCallback((path: string) => location.pathname === path, [location.pathname]);
 
-  const navLinks = [{
+  const navLinks = useMemo(() => [{
     path: "/",
     label: "Home"
   }, {
@@ -36,9 +38,12 @@ const Header = () => {
   }, {
     path: "/news",
     label: "Business/Tech News"
-  }];
+  }], []);
 
-  const NavLink = ({ path, label }: { path: string; label: string }) => (
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+  const toggleMobileMenu = useCallback(() => setMobileMenuOpen(prev => !prev), []);
+
+  const NavLink = memo(({ path, label }: { path: string; label: string }) => (
     <Link 
       to={path} 
       className={`nav-link px-3 py-2 text-sm font-medium transition-all duration-200 relative group ${
@@ -50,9 +55,9 @@ const Header = () => {
         isActiveRoute(path) ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
       }`}></span>
     </Link>
-  );
+  ));
 
-  const MobileNavLink = ({ path, label, onClick }: { path: string; label: string; onClick: () => void }) => (
+  const MobileNavLink = memo(({ path, label, onClick }: { path: string; label: string; onClick: () => void }) => (
     <Link 
       to={path} 
       className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" 
@@ -60,9 +65,9 @@ const Header = () => {
     >
       {label}
     </Link>
-  );
+  ));
 
-  const Logo = () => (
+  const Logo = memo(() => (
     <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
       <img 
         src="/lovable-uploads/a622b81f-1bc6-4b70-90bc-fdf0fd79ae53.png" 
@@ -79,9 +84,9 @@ const Header = () => {
         <p className="text-xs text-gray-600 leading-tight hidden sm:block">American Business & Technology Club</p>
       </div>
     </Link>
-  );
+  ));
 
-  const AuthButtons = () => (
+  const AuthButtons = memo(() => (
     <div className="hidden md:flex items-center space-x-3">
       <Link to="/login">
         <Button variant="ghost" size="sm" className="font-medium text-gray-700 hover:text-gray-900">
@@ -94,23 +99,23 @@ const Header = () => {
         </Button>
       </Link>
     </div>
-  );
+  ));
 
-  const MobileMenuButton = () => (
+  const MobileMenuButton = memo(({ onClick, isOpen }: { onClick: () => void; isOpen: boolean }) => (
     <div className="md:hidden flex justify-center flex-1">
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+        onClick={onClick} 
         className="h-10 w-10 bg-gray-100 hover:bg-gray-200 border border-gray-300 shadow-sm"
-        aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+        aria-label={isOpen ? "Close menu" : "Open menu"}
       >
-        {mobileMenuOpen ? <X size={24} className="text-gray-700" /> : <Menu size={24} className="text-gray-700" />}
+        {isOpen ? <X size={24} className="text-gray-700" /> : <Menu size={24} className="text-gray-700" />}
       </Button>
     </div>
-  );
+  ));
 
-  const MobileMenu = () => mobileMenuOpen && (
+  const MobileMenu = memo(({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen && (
     <div className="md:hidden bg-white shadow-lg border-t">
       {/* Mobile Organization Name */}
       <div className="px-4 py-3 border-b border-gray-200 bg-slate-50">
@@ -125,16 +130,16 @@ const Header = () => {
             key={link.path} 
             path={link.path} 
             label={link.label} 
-            onClick={() => setMobileMenuOpen(false)} 
+            onClick={onClose}
           />
         ))}
         <div className="pt-3 pb-2 border-t border-gray-200 mt-3">
-          <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+          <Link to="/login" onClick={onClose}>
             <Button variant="ghost" size="sm" className="w-full justify-center mb-2 font-medium text-gray-700">
               Log in
             </Button>
           </Link>
-          <Link to="/join" onClick={() => setMobileMenuOpen(false)}>
+          <Link to="/join" onClick={onClose}>
             <Button size="sm" className="w-full justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium">
               Join Us
             </Button>
@@ -142,7 +147,7 @@ const Header = () => {
         </div>
       </div>
     </div>
-  );
+  ));
 
   return (
     <header className={`bg-white shadow-sm sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
@@ -157,13 +162,15 @@ const Header = () => {
           </nav>
           
           <AuthButtons />
-          <MobileMenuButton />
+          <MobileMenuButton onClick={toggleMobileMenu} isOpen={mobileMenuOpen} />
         </div>
       </div>
       
-      <MobileMenu />
+      <MobileMenu isOpen={mobileMenuOpen} onClose={closeMobileMenu} />
     </header>
   );
-};
+});
+
+Header.displayName = 'Header';
 
 export default Header;

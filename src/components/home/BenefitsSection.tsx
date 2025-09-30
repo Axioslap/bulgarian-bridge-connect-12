@@ -1,8 +1,7 @@
-
 import { CheckCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 
-const BenefitsSection = () => {
+const BenefitsSection = memo(() => {
   const [isIPhone, setIsIPhone] = useState(false);
 
   useEffect(() => {
@@ -11,14 +10,14 @@ const BenefitsSection = () => {
     setIsIPhone(isAppleDevice);
   }, []);
 
-  const benefits = [
+  const benefits = useMemo(() => [
     "Access to exclusive networking events", 
     "Mentorship opportunities with industry leaders", 
     "Professional development workshops", 
     "Job placement assistance", 
     "Business partnership connections", 
     "Cultural exchange programs"
-  ];
+  ], []);
 
   return (
     <section className="py-12 sm:py-20 bg-white relative overflow-hidden">
@@ -52,6 +51,8 @@ const BenefitsSection = () => {
       </div>
     </section>
   );
-};
+});
+
+BenefitsSection.displayName = 'BenefitsSection';
 
 export default BenefitsSection;
