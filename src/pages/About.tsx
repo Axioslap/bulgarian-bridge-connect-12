@@ -1,6 +1,6 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEO from "@/components/common/SEO";
 import { useNavigate } from "react-router-dom";
 
 const About = () => {
@@ -74,8 +74,14 @@ const About = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
+    <>
+      <SEO
+        title="About Us | American Business & Technology Club"
+        description="Meet our leadership team and advisory board members. Learn about ABTC's mission to connect business and tech professionals with US-Bulgaria ties."
+        keywords="about ABTC, leadership team, advisory board, US Bulgaria business, technology club, professional network"
+      />
+      <div className="flex flex-col min-h-screen">
+        <Header />
       
       {/* Hero Section with Background */}
       <section className="relative overflow-hidden py-20 bg-gradient-to-br from-blue-800 via-blue-700 to-red-600">
@@ -166,8 +172,9 @@ const About = () => {
         </div>
       </section>
       
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 };
 

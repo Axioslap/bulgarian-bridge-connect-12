@@ -2,6 +2,7 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import EventCard from "@/components/EventCard";
+import SEO from "@/components/common/SEO";
 import { Input } from "@/components/ui/input";
 import { 
   Select,
@@ -109,8 +110,14 @@ const Events = () => {
   });
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
+    <>
+      <SEO
+        title="Events | American Business & Technology Club"
+        description="Discover networking events, workshops, panel discussions, and social gatherings. Join ABTC to connect with tech professionals and entrepreneurs."
+        keywords="networking events, tech workshops, business events, professional meetups, US Bulgaria events, technology conferences"
+      />
+      <div className="flex flex-col min-h-screen">
+        <Header />
       
       {/* Hero Section */}
       <section className="relative overflow-hidden">
@@ -235,7 +242,8 @@ const Events = () => {
       </section>
       
       <Footer />
-    </div>
+      </div>
+    </>
   );
 };
 
