@@ -67,7 +67,7 @@ const HeroSection = () => {
       clearTimeout(timeoutId);
     };
   }, [handleResize, preloadImage]);
-  return <section className={`relative flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 overflow-hidden ${isIPhone ? 'h-[calc(var(--vh,1vh)*80)] min-h-[600px]' : 'h-[600px] sm:h-[700px]'}`}>
+  return <section className={`relative flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-hidden ${isIPhone ? 'h-[calc(var(--vh,1vh)*80)] min-h-[600px]' : 'h-[600px] sm:h-[700px]'}`}>
       <div className={`absolute inset-0 bg-contain bg-center bg-no-repeat transition-opacity duration-700 ${imageLoaded ? 'opacity-15' : 'opacity-0'}`} style={{
       backgroundImage: imageLoaded ? `url('/lovable-uploads/1184c5a6-8163-4552-9dba-3d1f2157fb51.png')` : 'none',
       transform: isLoaded ? 'scale(1)' : 'scale(1.02)',
@@ -76,13 +76,12 @@ const HeroSection = () => {
       backgroundSize: isMobile ? 'cover' : 'contain'
     }}></div>
       
-      <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-blue-50/20 to-white/80"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.15),transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-white/70"></div>
       
       <div className={`relative z-10 text-center max-w-5xl mx-auto px-4 sm:px-6 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${isIPhone ? 'px-6' : ''}`}>
         
-        <h1 className={`font-display font-bold text-slate-900 mb-6 sm:mb-8 leading-tight ${isIPhone ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-3xl sm:text-5xl md:text-7xl'}`} style={{textShadow: '0 2px 10px rgba(0,0,0,0.1)'}}>
-          Welcome to <span className="gradient-text">American Business & Technology Club</span>
+        <h1 className={`font-bold text-slate-900 mb-6 sm:mb-8 drop-shadow-lg leading-tight ${isIPhone ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-3xl sm:text-5xl md:text-7xl'}`}>
+          Welcome to <span className="bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">American Business & Technology Club</span>
         </h1>
         <p className={`text-slate-700 mb-4 sm:mb-6 leading-relaxed drop-shadow-md max-w-4xl mx-auto ${isIPhone ? 'text-lg sm:text-xl md:text-2xl' : 'text-lg sm:text-xl md:text-3xl'}`}>
           Connecting business and tech professionals with strong <span className="font-semibold text-blue-700 whitespace-nowrap">US-Bulgaria</span> ties
@@ -95,23 +94,23 @@ const HeroSection = () => {
           <p className={`font-semibold text-slate-700 mb-4 sm:mb-6 ${isIPhone ? 'text-base sm:text-lg' : 'text-base sm:text-lg'}`}>Our Target by 2028:</p>
         </div>
         <div className={`grid grid-cols-3 mb-8 sm:mb-12 max-w-2xl mx-auto ${isIPhone ? 'gap-4 sm:gap-6' : 'gap-3 sm:gap-4 md:gap-8'}`}>
-          {stats.map((stat, index) => <div key={index} className="text-center group hover:scale-110 transition-elegant touch-manipulation backdrop-blur-sm bg-white/40 rounded-2xl p-4 shadow-elegant hover:shadow-premium border border-white/60">
-              <div className={`font-display font-bold gradient-text mb-1 sm:mb-2 ${isIPhone ? 'text-2xl sm:text-3xl md:text-4xl' : 'text-xl sm:text-2xl md:text-4xl'}`}>
+          {stats.map((stat, index) => <div key={index} className="text-center group hover:scale-105 transition-transform duration-200 touch-manipulation">
+              <div className={`font-bold text-blue-700 mb-1 sm:mb-2 group-hover:text-blue-800 transition-colors ${isIPhone ? 'text-2xl sm:text-3xl md:text-4xl' : 'text-xl sm:text-2xl md:text-4xl'}`}>
                 {stat.number}
               </div>
-              <div className={`text-slate-700 font-medium ${isIPhone ? 'text-sm sm:text-base' : 'text-xs sm:text-sm md:text-base'}`}>{stat.label}</div>
+              <div className={`text-slate-600 ${isIPhone ? 'text-sm sm:text-base' : 'text-xs sm:text-sm md:text-base'}`}>{stat.label}</div>
             </div>)}
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <a href="mailto:asen.ivanov@a2balliance.com" className="w-full sm:w-auto">
-            <Button variant="premium" size={isMobile ? "default" : "lg"} className={`w-full sm:w-auto touch-manipulation group ${isIPhone ? 'px-8 py-4 text-base min-h-[48px]' : 'px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg'}`}>
+            <Button size={isMobile ? "default" : "lg"} className={`bg-blue-800 hover:bg-blue-900 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group w-full sm:w-auto touch-manipulation ${isIPhone ? 'px-8 py-4 text-base min-h-[48px]' : 'px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg'}`}>
               Contact Us to Join
               <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </a>
           <Link to="/about" className="w-full sm:w-auto">
-            <Button variant="outline" size={isMobile ? "default" : "lg"} className={`w-full sm:w-auto touch-manipulation font-semibold ${isIPhone ? 'px-6 py-4 text-base min-h-[48px]' : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg'}`}>
+            <Button variant="outline" size={isMobile ? "default" : "lg"} className={`shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold border-2 border-slate-300 hover:border-blue-600 hover:text-blue-700 w-full sm:w-auto touch-manipulation ${isIPhone ? 'px-6 py-4 text-base min-h-[48px]' : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg'}`}>
               Learn More
             </Button>
           </Link>
