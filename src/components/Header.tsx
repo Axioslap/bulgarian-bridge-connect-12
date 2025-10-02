@@ -24,11 +24,11 @@ const Header = memo(() => {
     path: "/",
     label: "Home"
   }, {
-    path: "/about",
-    label: "About"
+    path: "/about-partners",
+    label: "About & Partners"
   }, {
-    path: "/partners",
-    label: "Our Partners"
+    path: "/storytelling",
+    label: "Storytelling"
   }, {
     path: "/experts",
     label: "Experts"

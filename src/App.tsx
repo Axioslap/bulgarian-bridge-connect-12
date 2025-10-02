@@ -9,7 +9,8 @@ import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
-const About = lazy(() => import("./pages/About"));
+const AboutPartners = lazy(() => import("./pages/AboutPartners"));
+const Storytelling = lazy(() => import("./pages/Storytelling"));
 const Experts = lazy(() => import("./pages/Experts"));
 const ExpertRegistration = lazy(() => import("./pages/ExpertRegistration"));
 const BecomeExpert = lazy(() => import("./pages/BecomeExpert"));
@@ -22,7 +23,6 @@ const MemberDashboard = lazy(() => import("./pages/MemberDashboard"));
 const AllPosts = lazy(() => import("./pages/AllPosts"));
 const CommunityPosts = lazy(() => import("./pages/CommunityPosts"));
 const PostDetail = lazy(() => import("./pages/PostDetail"));
-const Partners = lazy(() => import("./pages/Partners"));
 const PartnerDetail = lazy(() => import("./pages/PartnerDetail"));
 const BoardMember = lazy(() => import("./pages/BoardMember"));
 const JoinUs = lazy(() => import("./pages/JoinUs"));
@@ -64,9 +64,9 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
             <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
+            <Route path="/about-partners" element={<AboutPartners />} />
+            <Route path="/storytelling" element={<Storytelling />} />
             <Route path="/board-member/:id" element={<BoardMember />} />
-            <Route path="/partners" element={<Partners />} />
             <Route path="/partners/:id" element={<PartnerDetail />} />
             <Route path="/experts" element={<Experts />} />
         <Route path="/expert-registration" element={<ExpertRegistration />} />
