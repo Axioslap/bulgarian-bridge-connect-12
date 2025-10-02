@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import EventCard from "@/components/EventCard";
@@ -12,87 +12,48 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 const Events = () => {
-  // Sample events data
-  const allEvents = [
-    {
-      id: 1,
-      title: "Tech Networking Mixer",
-      date: "June 15, 2025 • 6:30 PM",
-      location: "Sofia Tech Park",
-      description: "Connect with fellow tech professionals and U.S. alumni in a casual networking event designed to foster new connections and potential collaborations.",
-      type: "networking" as const,
-      isUpcoming: true,
-    },
-    {
-      id: 2,
-      title: "Entrepreneurship Workshop: From Idea to Business Plan",
-      date: "June 28, 2025 • 10:00 AM",
-      location: "American Corner Sofia",
-      description: "Learn how to transform your innovative ideas into viable business plans with guidance from experienced entrepreneurs and mentors from the U.S.",
-      type: "workshop" as const,
-      isUpcoming: true,
-    },
-    {
-      id: 3,
-      title: "Panel Discussion: U.S.-Bulgaria Tech Partnerships",
-      date: "July 10, 2025 • 5:00 PM",
-      location: "U.S. Embassy Sofia",
-      description: "Join industry leaders and diplomats for an insightful discussion on strengthening technological partnerships between the United States and Bulgaria.",
-      type: "panel" as const,
-      isUpcoming: true,
-    },
-    {
-      id: 4,
-      title: "Summer Social Gathering",
-      date: "July 20, 2025 • 7:00 PM",
-      location: "Garden Restaurant, Sofia",
-      description: "Join us for a casual evening of socializing, networking, and celebrating the summer with fellow ABTC members and guests.",
-      type: "social" as const,
-      isUpcoming: true,
-    },
-    {
-      id: 5,
-      title: "Digital Marketing Strategies Workshop",
-      date: "August 5, 2025 • 2:00 PM",
-      location: "Online Webinar",
-      description: "Learn the latest digital marketing strategies from experts in the field, with a focus on approaches that work in both U.S. and European markets.",
-      type: "workshop" as const,
-      isUpcoming: true,
-    },
-    {
-      id: 6,
-      title: "Spring Networking Event",
-      date: "April 15, 2025 • 6:30 PM",
-      location: "Sofia Business Park",
-      description: "Our inaugural networking event brought together professionals from various industries to connect and explore potential collaborations.",
-      type: "networking" as const,
-      isUpcoming: false,
-    },
-    {
-      id: 7,
-      title: "Investment Opportunities Panel",
-      date: "May 3, 2025 • 4:00 PM",
-      location: "Grand Hotel Sofia",
-      description: "This panel featured investors and entrepreneurs discussing the landscape of investment opportunities between the U.S. and Bulgaria.",
-      type: "panel" as const,
-      isUpcoming: false,
-    },
-    {
-      id: 8,
-      title: "Intro to AI Workshop",
-      date: "May 20, 2025 • 10:00 AM",
-      location: "American University in Bulgaria",
-      description: "This hands-on workshop introduced participants to artificial intelligence concepts and practical applications in business.",
-      type: "workshop" as const,
-      isUpcoming: false,
-    },
-  ];
-  
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('event_date', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedEvents = (data || []).map(event => ({
+        id: event.id,
+        title: event.title,
+        date: format(new Date(event.event_date), "MMMM d, yyyy • h:mm a"),
+        location: event.location || "TBA",
+        description: event.description,
+        type: event.event_type,
+        isUpcoming: new Date(event.event_date) > new Date(),
+        registrationUrl: event.registration_url,
+        imageUrl: event.image_url
+      }));
+
+      setAllEvents(formattedEvents);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Apply filters
   const filteredEvents = allEvents.filter(event => {
@@ -169,7 +130,10 @@ const Events = () => {
                     <SelectItem value="networking">Networking</SelectItem>
                     <SelectItem value="workshop">Workshop</SelectItem>
                     <SelectItem value="panel">Panel Discussion</SelectItem>
-                    <SelectItem value="social">Social Gathering</SelectItem>
+                    <SelectItem value="social">Social Event</SelectItem>
+                    <SelectItem value="conference">Conference</SelectItem>
+                    <SelectItem value="webinar">Webinar</SelectItem>
+                    <SelectItem value="seminar">Seminar</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -193,7 +157,12 @@ const Events = () => {
           </div>
           
           {/* Events Grid */}
-          {filteredEvents.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading events...</p>
+            </div>
+          ) : filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
                 <EventCard
@@ -204,7 +173,8 @@ const Events = () => {
                   description={event.description}
                   type={event.type}
                   isUpcoming={event.isUpcoming}
-                  registrationUrl={event.isUpcoming ? "#" : undefined}
+                  registrationUrl={event.registrationUrl}
+                  imageUrl={event.imageUrl}
                 />
               ))}
             </div>
