@@ -25,7 +25,7 @@ const PremiumContentSection = ({
         <div className="mb-12 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Star className="w-8 h-8 text-blue-600" />
-            <h2 className="text-4xl font-bold text-gray-900">Premium Member Content</h2>
+            <h2 className="text-4xl font-bold text-gray-900">Member Content</h2>
             <Star className="w-8 h-8 text-red-600" />
           </div>
           <p className="text-xl text-gray-700 mb-6 max-w-3xl mx-auto">
