@@ -72,7 +72,7 @@ const EventsSection = () => {
           <Link to="/events">
             <Button 
               variant="outline" 
-              className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-medium border-2 border-gray-600 text-white hover:bg-white/10 hover:border-blue-400 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base group touch-manipulation"
+              className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-medium border-2 border-blue-500 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-400 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base group touch-manipulation"
             >
               View All Events
               <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />
