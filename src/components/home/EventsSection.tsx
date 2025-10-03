@@ -58,20 +58,21 @@ const EventsSection = () => {
   };
 
   return (
-    <section className="py-16 sm:py-24 bg-gradient-to-br from-white via-slate-50 to-white relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(30,64,175,0.04),transparent)] opacity-60"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(220,38,38,0.03),transparent)] opacity-60"></div>
+    <section className="py-16 sm:py-24 bg-slate-900 text-white relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent)] opacity-60"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(220,38,38,0.08),transparent)] opacity-60"></div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 sm:mb-16">
           <div className="mb-6 sm:mb-8 lg:mb-0">
-            <h2 className="font-bold text-slate-900 mb-3 sm:mb-4 text-3xl sm:text-4xl md:text-5xl">Upcoming Events</h2>
-            <p className="text-slate-600 text-lg sm:text-xl max-w-2xl">Join us for exciting networking and learning opportunities that drive innovation and collaboration</p>
+            <h2 className="font-bold text-white mb-3 sm:mb-4 text-3xl sm:text-4xl md:text-5xl">Upcoming Events</h2>
+            <p className="text-gray-300 text-lg sm:text-xl max-w-2xl">Join us for exciting networking and learning opportunities that drive innovation and collaboration</p>
           </div>
           <Link to="/events">
             <Button 
               variant="outline" 
-              className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-medium border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-blue-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base group touch-manipulation"
+              className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-medium border-2 border-gray-600 text-white hover:bg-white/10 hover:border-blue-400 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base group touch-manipulation"
             >
               View All Events
               <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />
@@ -81,11 +82,11 @@ const EventsSection = () => {
         
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-slate-600">Loading events...</p>
+            <p className="text-gray-300">Loading events...</p>
           </div>
         ) : events.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-600">No upcoming events at the moment. Check back soon!</p>
+            <p className="text-gray-300">No upcoming events at the moment. Check back soon!</p>
           </div>
         ) : (
           <div className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
