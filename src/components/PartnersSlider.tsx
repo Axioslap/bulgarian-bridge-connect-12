@@ -78,8 +78,8 @@ const PartnersSlider = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <CarouselPrevious className="bg-blue-600 text-white hover:bg-blue-700 border-blue-500" />
+          <CarouselNext className="bg-blue-600 text-white hover:bg-blue-700 border-blue-500" />
         </Carousel>
       </div>
     </section>

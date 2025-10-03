@@ -57,7 +57,7 @@ const CTASection = () => {
                 <a href="mailto:asen.ivanov@a2balliance.com" className="w-full sm:w-auto">
                   <Button 
                     size={isMobile ? "default" : "lg"} 
-                    className={`bg-white text-blue-800 hover:bg-slate-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group w-full sm:w-auto touch-manipulation ${
+                    className={`bg-blue-600 text-white hover:bg-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group w-full sm:w-auto touch-manipulation border-2 border-blue-500 hover:border-blue-400 ${
                       isIPhone 
                         ? 'px-8 py-4 text-base min-h-[48px]' 
                         : 'px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg'
@@ -72,7 +72,7 @@ const CTASection = () => {
                   <Button 
                     variant="outline" 
                     size={isMobile ? "default" : "lg"} 
-                    className={`border-2 border-white text-white hover:bg-white hover:text-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold w-full sm:w-auto touch-manipulation ${
+                    className={`border-2 border-blue-500 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold w-full sm:w-auto touch-manipulation ${
                       isIPhone 
                         ? 'px-6 py-4 text-base min-h-[48px]' 
                         : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg'
@@ -97,7 +97,7 @@ const CTASection = () => {
                 <Button 
                   variant="ghost" 
                   size={isMobile ? "default" : "lg"} 
-                  className={`text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 font-medium w-full sm:w-auto touch-manipulation ${
+                  className={`text-white border-2 border-white/30 hover:text-white hover:bg-white/10 hover:border-white/50 transition-all duration-300 font-medium w-full sm:w-auto touch-manipulation ${
                     isIPhone 
                       ? 'px-6 py-3 text-sm min-h-[44px]' 
                       : 'px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base'

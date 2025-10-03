@@ -102,7 +102,7 @@ const VideoSection = () => {
           <Link to="/member">
             <Button 
               size={isMobile ? "default" : "lg"} 
-              className={`bg-white text-slate-900 hover:bg-slate-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group touch-manipulation ${
+              className={`bg-blue-600 text-white hover:bg-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group touch-manipulation border-2 border-blue-500 hover:border-blue-400 ${
                 isIPhone 
                   ? 'px-8 py-4 text-base min-h-[48px]' 
                   : 'px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg'
