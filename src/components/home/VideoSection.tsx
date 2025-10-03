@@ -46,22 +46,24 @@ const VideoSection = () => {
   }];
 
   return (
-    <section className="py-16 sm:py-24 relative overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
+    <section className="py-20 sm:py-32 relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900/90 to-slate-900">
+      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20" style={{
         backgroundImage: `url('/lovable-uploads/65c1a96b-0098-4b43-9e35-3e825d4e89b8.png')`
       }}></div>
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-slate-800/80 to-slate-900/85"></div>
+      {/* Premium dark depth */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(59,130,246,0.12),transparent_70%)]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.3)_100%)]"></div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 sm:mb-16">
-          <h2 className={`font-bold mb-4 sm:mb-6 text-white ${
-            isIPhone ? 'text-3xl sm:text-4xl' : 'text-3xl sm:text-4xl md:text-5xl'
-          }`}>Storytelling - Videos</h2>
-          <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-blue-500 to-red-500 mx-auto mb-6 sm:mb-8 rounded-full"></div>
-          <p className={`text-white/90 max-w-4xl mx-auto leading-relaxed ${
-            isIPhone ? 'text-lg sm:text-xl' : 'text-lg sm:text-xl'
+        <div className="text-center mb-16 sm:mb-20">
+          <h2 className={`font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent leading-tight ${
+            isIPhone ? 'text-4xl sm:text-5xl' : 'text-4xl sm:text-5xl md:text-6xl'
+          }`}>Member Stories</h2>
+          <div className="w-32 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 mx-auto mb-8 rounded-full shadow-glow"></div>
+          <p className={`text-slate-300 max-w-4xl mx-auto leading-relaxed font-medium ${
+            isIPhone ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'
           }`}>
-            Discover inspiring stories and insights from our community members who are making an impact across the globe.
+            Discover inspiring stories from our community members making an impact
           </p>
         </div>
         

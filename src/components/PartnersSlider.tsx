@@ -36,17 +36,19 @@ const PartnersSlider = () => {
     description: "Digital transformation experts"
   }], []);
   return (
-    <section className="py-16 bg-slate-900 text-white relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent)] opacity-60"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(220,38,38,0.08),transparent)] opacity-60"></div>
-      <div className="container mx-auto px-4 relative">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+    <section className="py-20 sm:py-32 relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Premium dark effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.15),transparent_60%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.12),transparent_60%)]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_0%,rgba(255,255,255,0.02)_50%,transparent_100%)]"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-16 sm:mb-24">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent leading-tight">
             Our Partners
           </h2>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Trusted organizations that support our community's growth and success
+          <p className="text-xl sm:text-2xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-medium">
+            Collaborating with leading organizations to drive innovation
           </p>
         </div>
         

@@ -58,16 +58,16 @@ const EventsSection = () => {
   };
 
   return (
-    <section className="py-16 sm:py-24 bg-slate-900 text-white relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent)] opacity-60"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(220,38,38,0.08),transparent)] opacity-60"></div>
+    <section className="py-20 sm:py-32 relative overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50/20 to-slate-50">
+      {/* Elegant patterns */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(139,92,246,0.08),transparent_55%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,rgba(59,130,246,0.06),transparent_55%)]"></div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 sm:mb-16">
-          <div className="mb-6 sm:mb-8 lg:mb-0">
-            <h2 className="font-bold text-white mb-3 sm:mb-4 text-3xl sm:text-4xl md:text-5xl">Upcoming Events</h2>
-            <p className="text-gray-300 text-lg sm:text-xl max-w-2xl">Join us for exciting networking and learning opportunities that drive innovation and collaboration</p>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-16 sm:mb-20">
+          <div className="mb-8 lg:mb-0">
+            <h2 className="font-bold mb-4 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 bg-clip-text text-transparent leading-tight text-4xl sm:text-5xl md:text-6xl">Upcoming Events</h2>
+            <p className="text-slate-600 text-xl sm:text-2xl max-w-2xl leading-relaxed font-medium">Join us for exclusive networking and learning opportunities</p>
           </div>
           <Link to="/events">
             <Button 
