@@ -46,12 +46,12 @@ const Header = memo(() => {
   const NavLink = memo(({ path, label }: { path: string; label: string }) => (
     <Link 
       to={path} 
-      className={`nav-link px-3 py-2 text-sm font-medium transition-smooth relative group ${
-        isActiveRoute(path) ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+      className={`nav-link px-3 py-2 text-sm font-medium transition-all duration-200 relative group ${
+        isActiveRoute(path) ? 'text-gray-900 font-bold' : 'text-gray-700 hover:text-gray-900'
       }`}
     >
       {label}
-      <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-accent transition-transform origin-left duration-300 ${
+      <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-gray-900 transition-transform origin-left duration-300 ${
         isActiveRoute(path) ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
       }`}></span>
     </Link>
@@ -60,7 +60,7 @@ const Header = memo(() => {
   const MobileNavLink = memo(({ path, label, onClick }: { path: string; label: string; onClick: () => void }) => (
     <Link 
       to={path} 
-      className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-lg transition-smooth" 
+      className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" 
       onClick={onClick}
     >
       {label}
@@ -68,7 +68,7 @@ const Header = memo(() => {
   ));
 
   const Logo = memo(() => (
-    <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-smooth">
+    <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
       <img 
         src="/lovable-uploads/a622b81f-1bc6-4b70-90bc-fdf0fd79ae53.png" 
         alt="ABTC Bulgaria Logo" 
@@ -78,10 +78,10 @@ const Header = memo(() => {
       />
       <div className="flex flex-col">
         <div className="flex items-center">
-          <span className="text-lg font-bold text-primary mr-1">ABTC</span>
-          <span className="text-lg font-bold text-accent tracking-tight">Bulgaria</span>
+          <span className="text-lg font-bold text-blue-700 mr-1">ABTC</span>
+          <span className="text-lg font-bold text-red-600 tracking-tight">Bulgaria</span>
         </div>
-        <p className="text-xs text-muted-foreground leading-tight hidden sm:block">American Business & Technology Club</p>
+        <p className="text-xs text-gray-600 leading-tight hidden sm:block">American Business & Technology Club</p>
       </div>
     </Link>
   ));
@@ -89,13 +89,13 @@ const Header = memo(() => {
   const AuthButtons = memo(() => (
     <div className="hidden md:flex items-center space-x-3">
       <Link to="/login">
-        <Button variant="ghost" size="sm" className="font-medium">
+        <Button variant="ghost" size="sm" className="font-medium text-gray-700 hover:text-gray-900">
           Log in
         </Button>
       </Link>
       <Link to="/join">
-        <Button variant="premium" size="sm" className="font-medium">
-          Get in touch
+        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-medium">
+          Join Us
         </Button>
       </Link>
     </div>
@@ -107,20 +107,20 @@ const Header = memo(() => {
         variant="ghost" 
         size="icon" 
         onClick={onClick} 
-        className="h-10 w-10 border border-border shadow-subtle"
+        className="h-10 w-10 bg-gray-100 hover:bg-gray-200 border border-gray-300 shadow-sm"
         aria-label={isOpen ? "Close menu" : "Open menu"}
       >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
+        {isOpen ? <X size={24} className="text-gray-700" /> : <Menu size={24} className="text-gray-700" />}
       </Button>
     </div>
   ));
 
   const MobileMenu = memo(({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen && (
-    <div className="md:hidden bg-background shadow-premium border-t border-border">
+    <div className="md:hidden bg-white shadow-lg border-t">
       {/* Mobile Organization Name */}
-      <div className="px-4 py-3 border-b border-border bg-secondary">
+      <div className="px-4 py-3 border-b border-gray-200 bg-slate-50">
         <div className="text-center">
-          <p className="text-base font-semibold text-foreground leading-tight">American Business & Technology Club</p>
+          <p className="text-base font-semibold text-gray-800 leading-tight">American Business & Technology Club</p>
         </div>
       </div>
       
@@ -133,15 +133,15 @@ const Header = memo(() => {
             onClick={onClose}
           />
         ))}
-        <div className="pt-3 pb-2 border-t border-border mt-3">
+        <div className="pt-3 pb-2 border-t border-gray-200 mt-3">
           <Link to="/login" onClick={onClose}>
-            <Button variant="ghost" size="sm" className="w-full justify-center mb-2 font-medium">
+            <Button variant="ghost" size="sm" className="w-full justify-center mb-2 font-medium text-gray-700">
               Log in
             </Button>
           </Link>
           <Link to="/join" onClick={onClose}>
-            <Button variant="premium" size="sm" className="w-full justify-center font-medium">
-              Get in touch
+            <Button size="sm" className="w-full justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium">
+              Join Us
             </Button>
           </Link>
         </div>
@@ -150,9 +150,9 @@ const Header = memo(() => {
   ));
 
   return (
-    <header className={`bg-background/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-50 transition-smooth ${isScrolled ? 'shadow-elegant' : ''}`}>
+    <header className={`bg-white shadow-sm sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+        <div className="flex justify-between items-center my-[3px] py-0 bg-slate-50">
           <Logo />
           
           <nav className="hidden md:flex space-x-8">
