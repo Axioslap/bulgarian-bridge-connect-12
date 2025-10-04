@@ -82,8 +82,7 @@ const Header = memo(() => {
           <span className="text-lg font-bold text-blue-700 mr-1">ABTC</span>
           <span className="text-lg font-bold text-red-600 tracking-tight">Bulgaria</span>
         </div>
-        <p className="text-xs text-gray-600 leading-tight hidden sm:block flex items-center gap-1">
-          <img src="https://flagcdn.com/w20/us.png" alt="USA flag" className="w-4 h-3 inline-block" />
+        <p className="text-xs text-gray-600 leading-tight hidden sm:block">
           American Business & Technology Club
         </p>
       </div>
