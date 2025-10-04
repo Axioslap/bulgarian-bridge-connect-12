@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { throttle } from "@/utils/performance";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const Header = memo(() => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -167,7 +168,10 @@ const Header = memo(() => {
             ))}
           </nav>
           
-          <AuthButtons />
+          <div className="flex items-center gap-4">
+            <LanguageSelector />
+            <AuthButtons />
+          </div>
           <MobileMenuButton onClick={toggleMobileMenu} isOpen={mobileMenuOpen} />
         </div>
       </div>

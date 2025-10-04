@@ -2,7 +2,9 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Globe, Award } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 const HeroSection = () => {
+  const { t } = useLanguage();
   const [isLoaded, setIsLoaded] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -11,17 +13,17 @@ const HeroSection = () => {
   // Memoize stats to prevent unnecessary re-renders
   const stats = useMemo(() => [{
     number: "500+",
-    label: "Active Members",
+    label: t("hero.stats.members"),
     icon: Users
   }, {
     number: "50+",
-    label: "Partner Companies",
+    label: t("hero.stats.partners"),
     icon: Globe
   }, {
     number: "15+",
-    label: "Events Hosted",
+    label: t("hero.stats.events"),
     icon: Award
-  }], []);
+  }], [t]);
 
   // Memoize device detection
   const handleResize = useCallback(() => {
@@ -84,23 +86,23 @@ const HeroSection = () => {
         <h1 className={`font-display font-bold text-slate-900 mb-6 sm:mb-8 leading-tight ${isIPhone ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-3xl sm:text-5xl md:text-7xl'}`} style={{
         textShadow: '0 2px 10px rgba(0,0,0,0.1)'
       }}>
-          Welcome to 
+          {t("hero.welcome")}
           <span className="gradient-text block mt-2">
             <img src="https://flagcdn.com/w160/us.png" alt="USA flag" className={`inline-block mr-3 ${isIPhone ? 'w-12 h-9 sm:w-16 sm:h-12' : 'w-14 h-10 sm:w-20 sm:h-14'}`} style={{
             verticalAlign: 'middle'
           }} />
-            American Business & Technology Club
+            {t("hero.title")}
           </span>
         </h1>
         <p className={`text-slate-700 mb-4 sm:mb-6 leading-relaxed drop-shadow-md max-w-4xl mx-auto ${isIPhone ? 'text-lg sm:text-xl md:text-2xl' : 'text-lg sm:text-xl md:text-3xl'}`}>
-          Connecting business and tech professionals with strong <span className="font-semibold text-blue-700 whitespace-nowrap">US-Bulgaria</span> ties
+          {t("hero.subtitle")}
         </p>
         <p className={`text-slate-600 mb-6 sm:mb-8 max-w-3xl mx-auto ${isIPhone ? 'text-base sm:text-lg md:text-xl' : 'text-base sm:text-lg md:text-xl'}`}>
-          Join a thriving community of innovators, entrepreneurs, and leaders shaping the future of business and technology
+          {t("hero.description")}
         </p>
         
         <div className="mb-3 sm:mb-4 text-center">
-          <p className={`font-semibold text-slate-700 mb-4 sm:mb-6 ${isIPhone ? 'text-base sm:text-lg' : 'text-base sm:text-lg'}`}>Our Target by 2028:</p>
+          <p className={`font-semibold text-slate-700 mb-4 sm:mb-6 ${isIPhone ? 'text-base sm:text-lg' : 'text-base sm:text-lg'}`}>{t("hero.target")}</p>
         </div>
         <div className={`grid grid-cols-3 mb-8 sm:mb-12 max-w-2xl mx-auto ${isIPhone ? 'gap-4 sm:gap-6' : 'gap-3 sm:gap-4 md:gap-8'}`}>
           {stats.map((stat, index) => <div key={index} className="text-center group hover:scale-110 transition-elegant touch-manipulation backdrop-blur-sm bg-white/40 rounded-2xl p-4 shadow-elegant hover:shadow-premium border border-white/60">
@@ -114,13 +116,10 @@ const HeroSection = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <a href="mailto:asen.ivanov@a2balliance.com" className="w-full sm:w-auto">
             <Button variant="premium" size={isMobile ? "default" : "lg"} className={`w-full sm:w-auto touch-manipulation group ${isIPhone ? 'px-8 py-4 text-base min-h-[48px]' : 'px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg'}`}>
-              Contact Us to Join
+              {t("hero.joinButton")}
               <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </a>
-          <Link to="/about" className="w-full sm:w-auto">
-            
-          </Link>
         </div>
       </div>
     </section>;
