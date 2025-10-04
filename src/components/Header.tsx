@@ -78,11 +78,14 @@ const Header = memo(() => {
       />
       <div className="flex flex-col">
         <div className="flex items-center">
-          <span className="text-base mr-1">🇺🇸</span>
+          <img src="https://flagcdn.com/w20/us.png" alt="USA flag" className="w-5 h-4 mr-1.5" />
           <span className="text-lg font-bold text-blue-700 mr-1">ABTC</span>
           <span className="text-lg font-bold text-red-600 tracking-tight">Bulgaria</span>
         </div>
-        <p className="text-xs text-gray-600 leading-tight hidden sm:block">🇺🇸 American Business & Technology Club</p>
+        <p className="text-xs text-gray-600 leading-tight hidden sm:block flex items-center gap-1">
+          <img src="https://flagcdn.com/w20/us.png" alt="USA flag" className="w-4 h-3 inline-block" />
+          American Business & Technology Club
+        </p>
       </div>
     </Link>
   ));
@@ -121,7 +124,10 @@ const Header = memo(() => {
       {/* Mobile Organization Name */}
       <div className="px-4 py-3 border-b border-gray-200 bg-slate-50">
         <div className="text-center">
-          <p className="text-base font-semibold text-gray-800 leading-tight">🇺🇸 American Business & Technology Club</p>
+          <p className="text-base font-semibold text-gray-800 leading-tight flex items-center justify-center gap-2">
+            <img src="https://flagcdn.com/w20/us.png" alt="USA flag" className="w-5 h-4" />
+            American Business & Technology Club
+          </p>
         </div>
       </div>
       
