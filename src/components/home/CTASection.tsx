@@ -18,7 +18,7 @@ const CTASection = () => {
   }, []);
 
   return (
-    <section className="py-16 sm:py-24 relative overflow-hidden">
+    <section className="py-12 sm:py-16 relative overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
         backgroundImage: `url('/lovable-uploads/2cc62f2e-d04c-4da0-8baf-406cc6eccd43.png')`
       }}></div>
@@ -29,31 +29,31 @@ const CTASection = () => {
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`relative bg-black/30 rounded-3xl shadow-2xl text-center overflow-hidden backdrop-blur-sm border border-white/20 ${
-          isIPhone ? 'p-8 sm:p-12' : 'p-8 sm:p-12 md:p-20'
+          isIPhone ? 'p-6 sm:p-8' : 'p-6 sm:p-10 md:p-12'
         }`}>
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
           <div className="absolute top-10 right-10 w-16 sm:w-24 h-16 sm:h-24 rounded-full bg-white/10 animate-pulse"></div>
           <div className="absolute bottom-10 left-10 w-12 sm:w-16 h-12 sm:h-16 rounded-full bg-white/5 animate-pulse delay-200"></div>
           
           <div className="relative">
-            <h2 className={`font-bold text-white mb-6 sm:mb-8 drop-shadow-2xl leading-tight ${
-              isIPhone ? 'text-3xl sm:text-4xl md:text-5xl' : 'text-3xl sm:text-4xl md:text-6xl'
+            <h2 className={`font-bold text-white mb-4 sm:mb-6 drop-shadow-2xl leading-tight ${
+              isIPhone ? 'text-2xl sm:text-3xl md:text-4xl' : 'text-2xl sm:text-3xl md:text-5xl'
             }`}>
               Interested in Joining Our <span className="bg-gradient-to-r from-blue-400 to-red-400 bg-clip-text text-transparent">Community</span>?
             </h2>
-            <p className={`text-white/95 mb-4 sm:mb-6 max-w-4xl mx-auto leading-relaxed drop-shadow-lg ${
-              isIPhone ? 'text-lg sm:text-xl md:text-2xl' : 'text-lg sm:text-xl md:text-2xl'
+            <p className={`text-white/95 mb-3 sm:mb-4 max-w-3xl mx-auto leading-relaxed drop-shadow-lg ${
+              isIPhone ? 'text-base sm:text-lg md:text-xl' : 'text-base sm:text-lg md:text-xl'
             }`}>
               Our membership is invitation-only. We're building an exclusive network of professionals bridging the U.S. and Bulgaria.
             </p>
-            <p className={`text-white/90 mb-8 sm:mb-12 max-w-3xl mx-auto ${
-              isIPhone ? 'text-base sm:text-lg' : 'text-base sm:text-lg'
+            <p className={`text-white/90 mb-6 sm:mb-8 max-w-3xl mx-auto ${
+              isIPhone ? 'text-sm sm:text-base' : 'text-sm sm:text-base'
             }`}>
               Get in touch with us to learn about membership opportunities and how you can be part of our growing community.
             </p>
             
-            <div className="flex flex-col gap-6 max-w-2xl mx-auto mb-8">
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col gap-4 max-w-2xl mx-auto mb-6">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                 <a href="mailto:asen.ivanov@a2balliance.com" className="w-full sm:w-auto">
                   <Button 
                     size={isMobile ? "default" : "lg"} 
