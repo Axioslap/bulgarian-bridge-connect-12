@@ -62,10 +62,7 @@ const JoinUs = memo(() => {
                 Connecting business leaders and technology innovators across the US-Bulgaria corridor
               </p>
               <a href="mailto:asen.ivanov@a2balliance.com">
-                <Button size="lg" variant="secondary" className="text-lg px-8 py-6 text-stone-950 bg-gray-50">
-                  <Mail className="mr-2 h-5 w-5" />
-                  Contact Us to Join
-                </Button>
+                
               </a>
             </div>
           </section>
