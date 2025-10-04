@@ -78,10 +78,11 @@ const Header = memo(() => {
       />
       <div className="flex flex-col">
         <div className="flex items-center">
+          <span className="text-base mr-1">🇺🇸</span>
           <span className="text-lg font-bold text-blue-700 mr-1">ABTC</span>
           <span className="text-lg font-bold text-red-600 tracking-tight">Bulgaria</span>
         </div>
-        <p className="text-xs text-gray-600 leading-tight hidden sm:block">American Business & Technology Club</p>
+        <p className="text-xs text-gray-600 leading-tight hidden sm:block">🇺🇸 American Business & Technology Club</p>
       </div>
     </Link>
   ));
@@ -120,7 +121,7 @@ const Header = memo(() => {
       {/* Mobile Organization Name */}
       <div className="px-4 py-3 border-b border-gray-200 bg-slate-50">
         <div className="text-center">
-          <p className="text-base font-semibold text-gray-800 leading-tight">American Business & Technology Club</p>
+          <p className="text-base font-semibold text-gray-800 leading-tight">🇺🇸 American Business & Technology Club</p>
         </div>
       </div>
       

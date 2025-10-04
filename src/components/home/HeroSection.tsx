@@ -82,7 +82,7 @@ const HeroSection = () => {
       <div className={`relative z-10 text-center max-w-5xl mx-auto px-4 sm:px-6 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${isIPhone ? 'px-6' : ''}`}>
         
         <h1 className={`font-display font-bold text-slate-900 mb-6 sm:mb-8 leading-tight ${isIPhone ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-3xl sm:text-5xl md:text-7xl'}`} style={{textShadow: '0 2px 10px rgba(0,0,0,0.1)'}}>
-          Welcome to <span className="gradient-text">American Business & Technology Club</span>
+          Welcome to <span className="gradient-text">🇺🇸 American Business & Technology Club</span>
         </h1>
         <p className={`text-slate-700 mb-4 sm:mb-6 leading-relaxed drop-shadow-md max-w-4xl mx-auto ${isIPhone ? 'text-lg sm:text-xl md:text-2xl' : 'text-lg sm:text-xl md:text-3xl'}`}>
           Connecting business and tech professionals with strong <span className="font-semibold text-blue-700 whitespace-nowrap">US-Bulgaria</span> ties
