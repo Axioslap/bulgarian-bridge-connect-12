@@ -27,7 +27,6 @@ const HeroSection = () => {
   const handleResize = useCallback(() => {
     const newIsMobile = window.innerWidth < 768;
     setIsMobile(newIsMobile);
-    
     if (isIPhone) {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -45,23 +44,24 @@ const HeroSection = () => {
     // Use webp format if supported, fallback to png
     img.src = '/lovable-uploads/1184c5a6-8163-4552-9dba-3d1f2157fb51.png';
   }, []);
-
   useEffect(() => {
     setIsLoaded(true);
-    
+
     // Add resize listener with debounce
     let timeoutId: NodeJS.Timeout;
     const debouncedResize = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(handleResize, 100);
     };
-    
-    window.addEventListener('resize', debouncedResize, { passive: true });
+    window.addEventListener('resize', debouncedResize, {
+      passive: true
+    });
     handleResize();
-    
+
     // Preload image with intersection observer for better performance
-    requestIdleCallback(preloadImage, { timeout: 2000 });
-    
+    requestIdleCallback(preloadImage, {
+      timeout: 2000
+    });
     return () => {
       window.removeEventListener('resize', debouncedResize);
       clearTimeout(timeoutId);
@@ -81,10 +81,14 @@ const HeroSection = () => {
       
       <div className={`relative z-10 text-center max-w-5xl mx-auto px-4 sm:px-6 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${isIPhone ? 'px-6' : ''}`}>
         
-        <h1 className={`font-display font-bold text-slate-900 mb-6 sm:mb-8 leading-tight ${isIPhone ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-3xl sm:text-5xl md:text-7xl'}`} style={{textShadow: '0 2px 10px rgba(0,0,0,0.1)'}}>
+        <h1 className={`font-display font-bold text-slate-900 mb-6 sm:mb-8 leading-tight ${isIPhone ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-3xl sm:text-5xl md:text-7xl'}`} style={{
+        textShadow: '0 2px 10px rgba(0,0,0,0.1)'
+      }}>
           Welcome to 
           <span className="gradient-text block mt-2">
-            <img src="https://flagcdn.com/w160/us.png" alt="USA flag" className={`inline-block mr-3 ${isIPhone ? 'w-12 h-9 sm:w-16 sm:h-12' : 'w-14 h-10 sm:w-20 sm:h-14'}`} style={{verticalAlign: 'middle'}} />
+            <img src="https://flagcdn.com/w160/us.png" alt="USA flag" className={`inline-block mr-3 ${isIPhone ? 'w-12 h-9 sm:w-16 sm:h-12' : 'w-14 h-10 sm:w-20 sm:h-14'}`} style={{
+            verticalAlign: 'middle'
+          }} />
             American Business & Technology Club
           </span>
         </h1>
@@ -115,9 +119,7 @@ const HeroSection = () => {
             </Button>
           </a>
           <Link to="/about" className="w-full sm:w-auto">
-            <Button variant="outline" size={isMobile ? "default" : "lg"} className={`w-full sm:w-auto touch-manipulation font-semibold ${isIPhone ? 'px-6 py-4 text-base min-h-[48px]' : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg'}`}>
-              Learn More
-            </Button>
+            
           </Link>
         </div>
       </div>
