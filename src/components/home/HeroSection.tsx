@@ -84,7 +84,7 @@ const HeroSection = () => {
         <h1 className={`font-display font-bold text-slate-900 mb-6 sm:mb-8 leading-tight ${isIPhone ? 'text-3xl sm:text-4xl md:text-6xl' : 'text-3xl sm:text-5xl md:text-7xl'}`} style={{textShadow: '0 2px 10px rgba(0,0,0,0.1)'}}>
           Welcome to 
           <span className="gradient-text block mt-2">
-            <img src="https://flagcdn.com/w40/us.png" alt="USA flag" className={`inline-block mr-3 ${isIPhone ? 'w-12 h-9 sm:w-16 sm:h-12' : 'w-14 h-10 sm:w-20 sm:h-14'}`} style={{verticalAlign: 'middle'}} />
+            <img src="https://flagcdn.com/w160/us.png" alt="USA flag" className={`inline-block mr-3 ${isIPhone ? 'w-12 h-9 sm:w-16 sm:h-12' : 'w-14 h-10 sm:w-20 sm:h-14'}`} style={{verticalAlign: 'middle'}} />
             American Business & Technology Club
           </span>
         </h1>
